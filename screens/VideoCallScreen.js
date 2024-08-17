@@ -21,7 +21,7 @@ const VideoCallScreen = ({ route, navigation }) => {
   const firestore = getFirestore(app);
 
     const initializeSocket = () => {
-      const socket = io('https://soc-system-rxo4.onrender.com'); //! Change this to your server URL
+      const socket = io('https://soc-thesis.onrender.com'); //! Change this to your server URL
       socketRef.current = socket;
 
       socket.on('connect', () => {

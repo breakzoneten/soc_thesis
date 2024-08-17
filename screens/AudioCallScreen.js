@@ -16,7 +16,7 @@ const AudioCallScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     const initializeSocket = () => {
-      const socket = io('https://soc-system-rxo4.onrender.com');
+      const socket = io('https://soc-thesis.onrender.com');
       socketRef.current = socket;
 
       socket.on('connect', () => {
