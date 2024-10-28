@@ -66,7 +66,7 @@ const ChatScreen = () => {
         const publicKeyDoc = await getDoc(doc(firestore, 'users', user.uid));
         if (publicKeyDoc.exists()) {
           setPublicKey(publicKeyDoc.data().publicKey);
-          console.log('Public key fetched successfully', publicKeyDoc.data().publicKey);
+          // console.log('Public key fetched successfully', publicKeyDoc.data().publicKey);
         } else {
           console.error('Public key not found');
         }
@@ -77,7 +77,7 @@ const ChatScreen = () => {
         //! Fetch private key from SecureStore
         const privateKey = await SecureStore.getItemAsync('privateKey');
         if (privateKey) {
-          console.log('Private key fetched successfully', privateKey);
+          // console.log('Private key fetched successfully', privateKey);
           setPrivateKey(privateKey);
         } else {
           console.error('Private key not found');
@@ -140,14 +140,14 @@ const ChatScreen = () => {
             // try {
               if (data.user._id !== auth.currentUser.uid) {
                 const decryptedAesKeyBase64 = await RSA.decrypt(data.aesKey, privateKey); //! Decrypt AES key
-                console.log('Decrypted AES key:', decryptedAesKeyBase64); 
+                // console.log('Decrypted AES key:', decryptedAesKeyBase64); 
                 const decryptedAesKey = Buffer.from(decryptedAesKeyBase64, 'base64').toString('hex'); //!  Convert decrypted AES key to buffer 
-                console.log('Decrypted AES key buffer:', decryptedAesKey); 
+                // console.log('Decrypted AES key buffer:', decryptedAesKey); 
                 const decryptedTextBytes = CryptoJS.AES.decrypt(data.text, decryptedAesKey); //! Decrypt text using decrypted AES key
-                console.log('Decrypted text bytes:', decryptedTextBytes); 
+                // console.log('Decrypted text bytes:', decryptedTextBytes); 
                 decryptedText = decryptedTextBytes.toString(CryptoJS.enc.Utf8); //! Convert decrypted text to string
-                console.log('Decrypted text:', decryptedText);
-                console.log('Decryption successful');
+                // console.log('Decrypted text:', decryptedText);
+                // console.log('Decryption successful');
               } else {
                 decryptedText = Buffer.from(data._sender, 'base64').toString('utf8'); //! Convert decrypted AES key to buffer 
               }
@@ -219,18 +219,18 @@ const ChatScreen = () => {
 
     try {
       const aesKey = CryptoJS.lib.WordArray.random(16).toString(); //! Generate random AES key
-      console.log('AES key:', aesKey); 
+      // console.log('AES key:', aesKey); 
 
       let encryptedText = '';
       if (text) {
         encryptedText = CryptoJS.AES.encrypt(text, aesKey).toString(); //! Encrypt text using AES key
-        console.log('Encrypted text:', encryptedText); 
+        // console.log('Encrypted text:', encryptedText); 
       }
 
       const aeseKeyBuffer = Buffer.from(aesKey, 'hex'); //! Convert AES key to buffer
-      console.log('AES key buffer:', aeseKeyBuffer);
+      // console.log('AES key buffer:', aeseKeyBuffer);
       const encryptedAesKey = await RSA.encrypt(aeseKeyBuffer.toString('base64'), publicKey); //! Encrypt AES key using RSA public key
-      console.log('Encrypted AES key:', encryptedAesKey);
+      // console.log('Encrypted AES key:', encryptedAesKey);
 
       const messageData = {
         _id,
@@ -249,7 +249,7 @@ const ChatScreen = () => {
       };
 
       await addDoc(collection(firestore, 'chats'), messageData);
-      console.log('Message sent successfully!');
+      // console.log('Message sent successfully!');
       await setDoc(doc(firestore, 'typingStatus', participantIds), {
         typing: '',
         lastTyped: serverTimestamp(),
@@ -283,15 +283,15 @@ const ChatScreen = () => {
         quality: 1,
       });
 
-      console.log('Image picker result:', result);
+      // console.log('Image picker result:', result);
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const imageUri = result.assets[0].uri;
-        console.log('Image picked:', imageUri);
+        // console.log('Image picked:', imageUri);
 
         try {
           const fileURL = await uploadFile(imageUri, 'images');
-          console.log('File URL:', fileURL);
+          // console.log('File URL:', fileURL);
 
           const message = {
             _id: new Date().getTime().toString(),
@@ -308,7 +308,7 @@ const ChatScreen = () => {
           console.error('Error uploading file:', uploadError);
         }
       } else {
-        console.log('Image picking canceled or assets are missing');
+        // console.log('Image picking canceled or assets are missing');
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -317,7 +317,7 @@ const ChatScreen = () => {
 
   const pickDocument = async () => {
     try {
-      console.log('Picking document...');
+      // console.log('Picking document...');
       const result = await DocumentPicker.getDocumentAsync(
         {
           type: '*/*',
@@ -332,7 +332,7 @@ const ChatScreen = () => {
         try {
 
           const fileURL = await uploadFile(fileUri, 'documents');
-          console.log('File URL obtained:', fileURL);
+          // console.log('File URL obtained:', fileURL);
           const message = {
             _id: new Date().getTime().toString(),
             createdAt: new Date(),
@@ -344,12 +344,12 @@ const ChatScreen = () => {
             text: '',
           };
           onSend([message], fileURL, 'document');
-          console.log('Document message sent');
+          // console.log('Document message sent');
         } catch (uploadError) {
           console.error('Error uploading document:', uploadError);
         }
       } else {
-        console.log('Document picking canceled or assets are missing');
+        // console.log('Document picking canceled or assets are missing');
       }
     } catch (error) {
       console.error('Error picking document:', error);
@@ -358,10 +358,10 @@ const ChatScreen = () => {
 
   const uploadFile = async (uri, fileType) => {
     try {
-      console.log('Fetching file from URI:', uri);
+      // console.log('Fetching file from URI:', uri);
       const response = await fetch(uri);
 
-      console.log('Fetch response status:', response.status);
+      // console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`Fetch failed with status: ${response.status}`);
@@ -374,7 +374,7 @@ const ChatScreen = () => {
       await uploadBytes(fileRef, blob);
       const downloadURL = await getDownloadURL(fileRef);
 
-      console.log('File uploaded successfully, download URL:', downloadURL);
+      // console.log('File uploaded successfully, download URL:', downloadURL);
       return downloadURL;
     } catch (error) {
       console.error('Error in uploadFile:', error);
