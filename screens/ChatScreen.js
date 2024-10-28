@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { BackHandler, Image, Text, View, StyleSheet, Pressable, Linking } from 'react-native';
 import { app } from '../firebaseConfig';
+import { getDatabase, ref, onValue } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, orderBy, getDoc, doc, updateDoc, setDoc, serverTimestamp, query, onSnapshot, where } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPaperclip, faImage, faVideo, faPhone } from '@fortawesome/free-solid-svg-icons';
@@ -25,6 +26,7 @@ LogBox.ignoreAllLogs();
 const ChatScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const [isUserOnline, setIsUserOnline] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [publicKey, setPublicKey] = useState('');
@@ -42,6 +44,20 @@ const ChatScreen = () => {
   const AudioC = () => {
     navigation.navigate('AudioCall', { user, profilePicture });
   }
+
+  useEffect(() => {
+    const database = getDatabase(app);
+    const userStatusRef = ref(database, 'status/' + user.uid); 
+
+    const unsubscribe = onValue(userStatusRef, (snapshot) => {
+      const status = snapshot.val();
+      setIsUserOnline(status?.state === 'online'); 
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user.uid]);
 
   useEffect(() => {
     const fetchKeys = async () => {
@@ -105,7 +121,7 @@ const ChatScreen = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: () => <HeaderWithPicture username={username} profilePicture={profilePicture} />,
+      headerTitle: () => <HeaderWithPicture username={username} profilePicture={profilePicture} isUserOnline={isUserOnline}/>,
     });
 
     if (auth.currentUser && user && user.uid) {
@@ -366,7 +382,7 @@ const ChatScreen = () => {
     }
   };
 
-  const HeaderWithPicture = ({ username, profilePicture }) => {
+  const HeaderWithPicture = ({ username, profilePicture, isUserOnline }) => {
     return (
       <View style={{
         flexDirection: 'row',
@@ -374,12 +390,15 @@ const ChatScreen = () => {
         width: '100%',
         position: 'relative',
       }}>
+        <View style={styles.imageContainer}>
         <Image source={{ uri: profilePicture }} style={{
           width: 45,
           height: 45,
           borderRadius: 25,
           marginRight: 10,
         }} />
+        {isUserOnline && <View style={styles.onlineIndicator}/>}
+        </View>
         <Text style={{
           color: '#fff',
           fontSize: 20,
@@ -644,6 +663,18 @@ const styles = StyleSheet.create({
   timeRight: {
     color: '#555',
   },
+  imageContainer: {
+    position: 'relative',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    right: 8,
+    bottom: 3,
+    width: 12.5,
+    height: 12.5,
+    borderRadius: 7.5,
+    backgroundColor: '#00dd00',
+  }
 });
 
 export default ChatScreen;
