@@ -21,6 +21,7 @@
 * Group Chats
 * File Send (Images, Documents)
 * Typing Indicator
+* Online Status Indicator
 * Video Call 
 * Audio Call
 
