@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Image, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Image, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
 import io from 'socket.io-client';
 import { app } from '../firebaseConfig';
@@ -20,63 +20,95 @@ const VideoCallScreen = ({ route, navigation }) => {
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
 
-    const initializeSocket = () => {
-      const socket = io('https://soc-thesis.onrender.com'); //! Change this to your server URL
-      socketRef.current = socket;
 
-      socket.on('connect', () => {
-        console.log('Connected to signaling server');
-        setIsConnected(true);
-      });
+  const AnimatedPressable = ({ onPress, style, children }) => {
+    const animatedScale = useRef(new Animated.Value(1)).current;
 
-      socket.on('offer', async (offer) => {
-        console.log('Received offer:', offer);
-        if (!pcRef.current) {
-          pcRef.current = createPeerConnection();
-        }
+    const handlePressIn = () => {
+      Animated.spring(animatedScale, {
+        toValue: 0.9,
+        useNativeDriver: true,
+      }).start();
+    }
+
+    const handlePressOut = () => {
+      Animated.spring(animatedScale, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+      
+    }
+    return (
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+      >
+        <Animated.View style={[style, { transform: [{ scale: animatedScale }] }]}>
+          {children}
+        </Animated.View>
+      </Pressable>
+    );
+  }
+
+  const initializeSocket = () => {
+    const socket = io('https://soc-thesis.onrender.com'); //! Change this to your server URL
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('Connected to signaling server');
+      setIsConnected(true);
+    });
+
+    socket.on('offer', async (offer) => {
+      console.log('Received offer:', offer);
+      if (!pcRef.current) {
+        pcRef.current = createPeerConnection();
+      }
+      try {
+        await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pcRef.current.createAnswer();
+        await pcRef.current.setLocalDescription(answer);
+        socket.emit('answer', answer);
+      } catch (error) {
+        console.error('Error handling offer:', error);
+      }
+    });
+
+    socket.on('answer', async (answer) => {
+      console.log('Received answer:', answer);
+      if (pcRef.current) {
         try {
-          await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer));
-          const answer = await pcRef.current.createAnswer();
-          await pcRef.current.setLocalDescription(answer);
-          socket.emit('answer', answer);
+          await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
         } catch (error) {
-          console.error('Error handling offer:', error);
+          console.error('Error setting remote description:', error);
         }
-      });
+      }
+    });
 
-      socket.on('answer', async (answer) => {
-        console.log('Received answer:', answer);
-        if (pcRef.current) {
-          try {
-            await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-          } catch (error) {
-            console.error('Error setting remote description:', error);
-          }
+    socket.on('ice-candidate', async (candidate) => {
+      console.log('Received ICE candidate:', candidate);
+      if (pcRef.current) {
+        try {
+          await pcRef.current.addIceCandidate(candidate);
+        } catch (error) {
+          console.error('Error adding ICE candidate:', error);
         }
-      });
+      }
+    });
 
-      socket.on('ice-candidate', async (candidate) => {
-        console.log('Received ICE candidate:', candidate);
-        if (pcRef.current) {
-          try {
-            await pcRef.current.addIceCandidate(candidate);
-          } catch (error) {
-            console.error('Error adding ICE candidate:', error);
-          }
-        }
-      });
-
-      return () => {
-        if (socketRef.current) {
-          socketRef.current.disconnect();
-          socketRef.current = null;
-        }
-        if (pcRef.current) {
-          pcRef.current.close();
-          pcRef.current = null;
-        }
-      };
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      if (pcRef.current) {
+        pcRef.current.close();
+        pcRef.current = null;
+      }
     };
+  };
 
   useEffect(() => {
     initializeSocket();
@@ -184,7 +216,7 @@ const VideoCallScreen = ({ route, navigation }) => {
     }
     if (socketRef.current) {
       socketRef.current.disconnect();
-      socketRef.current = null; 
+      socketRef.current = null;
       setIsConnected(false);
     }
     setCallStarted(false);
@@ -221,7 +253,7 @@ const VideoCallScreen = ({ route, navigation }) => {
         video: {
           facingMode: isUsingFrontCamera ? 'user' : 'environment',
         },
-      }); 
+      });
       setLocalStream(stream);
 
       if (pcRef.current) {
@@ -283,7 +315,7 @@ const VideoCallScreen = ({ route, navigation }) => {
           </View>
         ) : (
           <>
-            <Pressable style={{
+            <AnimatedPressable style={{
               ...styles.button,
               backgroundColor: isMicOn ? '#fff' : '#f44336',
               marginRight: 20,
@@ -291,22 +323,22 @@ const VideoCallScreen = ({ route, navigation }) => {
               onPress={toggleMicrophone}
             >
               <FontAwesomeIcon icon={isMicOn ? faMicrophone : faMicrophoneSlash} size={35} color={isMicOn ? '#f44336' : "#fff"} />
-            </Pressable>
-            <Pressable style={{
+            </AnimatedPressable>
+            <AnimatedPressable style={{
               ...styles.button,
               backgroundColor: '#fff',
               marginRight: 20,
             }} onPress={createOffer}>
               <FontAwesomeIcon icon={faPhone} size={35} color="#00ff66" />
-            </Pressable>
-            <Pressable style={{
+            </AnimatedPressable>
+            <AnimatedPressable style={{
               ...styles.button,
               backgroundColor: '#fff',
               marginRight: 20,
             }} onPress={endCall}>
               <FontAwesomeIcon icon={faPhoneSlash} size={35} color="#f44336" />
-            </Pressable>
-            <Pressable style={{
+            </AnimatedPressable>
+            <AnimatedPressable style={{
               ...styles.button,
               backgroundColor: isCameraOn ? '#fff' : '#f44336',
               marginRight: 20,
@@ -314,13 +346,13 @@ const VideoCallScreen = ({ route, navigation }) => {
               onPress={toggleCameraOnOff}
             >
               <FontAwesomeIcon icon={isCameraOn ? faVideo : faVideoSlash} size={35} color={isCameraOn ? "#f44336" : "#fff"} />
-            </Pressable>
-            <Pressable style={{
+            </AnimatedPressable>
+            <AnimatedPressable style={{
               ...styles.button,
               backgroundColor: '#fff',
             }} onPress={switchCamera}>
               <FontAwesomeIcon icon={faSync} size={35} color="#f44336" />
-            </Pressable>
+            </AnimatedPressable>
           </>
         )}
       </View>
@@ -340,6 +372,9 @@ const styles = StyleSheet.create({
     height: '43%',
     backgroundColor: '#000',
     zIndex: 0,
+  },
+  buttonContainer: {
+    margin: 10,
   },
   button: {
     padding: 10,
