@@ -14,6 +14,7 @@ import * as ScreenCapture from 'expo-screen-capture';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
+import {Notifications} from 'react-native-notifications';
 // import crypto from 'react-native-quick-crypto'; //! UNUSED DUE TO COMMENTED IMPLEMENTATION
 import { RSA } from 'react-native-rsa-native';
 import CryptoJS from 'react-native-crypto-js';
