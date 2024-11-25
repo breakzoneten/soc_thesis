@@ -13,7 +13,7 @@ import { useIsFocused } from '@react-navigation/native';
 
 const GroupChatScreen = ({ route, navigation }) => {
   const isFocused = useIsFocused();
-  const { groupId, groupName, } = route.params; // Pass groupId and groupName through route params
+  const { groupId, groupName, photoURL } = route.params; // Pass groupId and groupName through route params
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
   const auth = getAuth(app);
@@ -47,15 +47,25 @@ const GroupChatScreen = ({ route, navigation }) => {
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <Avatar rounded title={groupName[0]} size={40} containerStyle={{
-          backgroundColor: getRandomColor(),
-          marginRight: 15,
-        }} />
+        // <Avatar rounded title={groupName[0]} size={40} containerStyle={{
+        //   backgroundColor: getRandomColor(),
+        //   marginRight: 15,
+        // }} />
+        <Avatar
+          rounded
+          source={photoURL ? { uri: photoURL } : null}
+          title={groupName[0]}
+          size={40}
+          containerStyle={{
+            backgroundColor: photoURL ? 'transparent' : getRandomColor(),
+            marginRight: 15,
+          }}
+        />
       ),
       headerTitle: groupName,
       headerBackVisible: false,
     })
-  }, [navigation, groupName]);
+  }, [navigation, groupName, photoURL]);
 
   useEffect(() => {
     const backAction = () => {
