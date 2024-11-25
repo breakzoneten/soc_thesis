@@ -74,7 +74,7 @@ const CreateGroupScreen = ({ navigation }) => {
 
     let photoURL = '';
     if (groupPhotoUri) {
-      ToastAndroid.show('Uploading photo...', ToastAndroid.SHORT);
+      ToastAndroid.show('Uploading photo...', ToastAndroid.SHORT); // ADDED
       const filename = groupPhotoUri.substring(groupPhotoUri.lastIndexOf('/') + 1);
       const response = await fetch(groupPhotoUri);
       const blob = await response.blob();
