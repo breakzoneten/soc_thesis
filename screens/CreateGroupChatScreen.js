@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BackHandler, View, Text, TextInput, Pressable, FlatList, StyleSheet, ToastAndroid } from 'react-native';
+import { ActivityIndicator, BackHandler, View, Text, TextInput, Pressable, FlatList, StyleSheet, ToastAndroid } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, TitilliumWeb_400Regular, TitilliumWeb_600SemiBold } from '@expo-google-fonts/titillium-web';
 import { SearchBar } from '@rneui/themed';
@@ -56,7 +56,8 @@ const CreateGroupScreen = ({ navigation }) => {
   const [groupName, setGroupName] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [userInput, setUserInput] = useState('');
-  const [showUploadButton, setShowUploadButton] = useState(false);
+  const [showCreateButton, setShowCreateButton] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [profilePicture, setProfilePicture] = useState('');
   const [groupPhotoUri, setGroupPhotoUri] = useState('');
@@ -74,7 +75,8 @@ const CreateGroupScreen = ({ navigation }) => {
 
     let photoURL = '';
     if (groupPhotoUri) {
-      ToastAndroid.show('Uploading photo...', ToastAndroid.SHORT); // ADDED
+      // ToastAndroid.show('Uploading photo...', ToastAndroid.SHORT); // ADDED
+      setIsLoading(true);
       const filename = groupPhotoUri.substring(groupPhotoUri.lastIndexOf('/') + 1);
       const response = await fetch(groupPhotoUri);
       const blob = await response.blob();
@@ -86,12 +88,13 @@ const CreateGroupScreen = ({ navigation }) => {
         await uploadBytes(storageRef, blob);
         photoURL = await getDownloadURL(storageRef);
         console.log('Photo uploaded:', photoURL); // Add this line to check if the photo is uploaded
-
         ToastAndroid.show('Photo uploaded successfully!', ToastAndroid.SHORT);
       } catch (e) {
         console.error('Error uploading photo: ', e);
 
         ToastAndroid.show('Error uploading photo!', ToastAndroid.SHORT);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -140,7 +143,7 @@ const CreateGroupScreen = ({ navigation }) => {
   };
 
   useEffect(() => {
-    setShowUploadButton(groupName.length > 0);
+    setShowCreateButton(groupName.length > 0);
   }, [groupName]);
 
   useEffect(() => {
@@ -183,7 +186,7 @@ const CreateGroupScreen = ({ navigation }) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3], 
+      aspect: [4, 3],
       quality: 1,
     })
 
@@ -242,37 +245,42 @@ const CreateGroupScreen = ({ navigation }) => {
                 autoFocus={true}
               />
               <Pressable
-                onPress={createGroup}
+                onPress={uploadPhoto}
               >
                 {({ pressed }) => (
                   <Text style={{
                     fontFamily: 'TitilliumWeb_600SemiBold',
                     fontSize: 14,
-                    backgroundColor: pressed ? '#f0ceff' : '#fff',
+                    backgroundColor: pressed ? "#005f99" : "#007acc",
+                    color: '#fff',
                     textAlign: 'center',
                     padding: 13,
                     borderRadius: 5,
-                  }}>Create Group</Text>
+                  }}>Upload Group Photo</Text>
                 )}
               </Pressable>
             </View>
-            {showUploadButton && (
+            {showCreateButton && (
               <Pressable
-                onPress={uploadPhoto}
+                onPress={createGroup}
                 style={({ pressed }) => ({
-                  backgroundColor: pressed ? "#005f99" : "#007acc",
+                  backgroundColor: pressed ? '#f0ceff' : '#fff',
                   borderRadius: 5,
                   marginHorizontal: 10,
                 })}>
-                <Text
-                  style={{
-                    fontFamily: 'TitilliumWeb_600SemiBold',
-                    fontSize: 14,
-                    color: '#fff',
-                    padding: 13,
-                    borderRadius: 5,
-                    textAlign: 'center',
-                  }}>Upload Group Photo</Text>
+                {isLoading ? (
+                  <ActivityIndicator size="large" color="#000"  style={{ padding: 10 }} />
+                ) : (
+                  <Text
+                    style={{
+                      fontFamily: 'TitilliumWeb_600SemiBold',
+                      fontSize: 14,
+                      color: '#000',
+                      padding: 13,
+                      borderRadius: 5,
+                      textAlign: 'center',
+                    }}>Create Group</Text>
+                )}
               </Pressable>
             )}
           </View>
@@ -349,6 +357,12 @@ const styles = StyleSheet.create({
     fontSize: 25,
     color: '#fff',
     textAlign: 'center',
+  },
+  loadingIndicator: {
+    position: 'absolute',
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -25 }, { translateY: -25 }],
   },
 });
 
