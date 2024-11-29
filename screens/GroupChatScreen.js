@@ -10,6 +10,9 @@ import { app } from '../firebaseConfig';
 import { Avatar, Divider } from 'react-native-elements';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from '@react-navigation/native';
+import { RSA } from 'react-native-rsa-native';
+import * as SecureStore from 'expo-secure-store';
+import CryptoJS from 'react-native-crypto-js';
 
 const GroupChatScreen = ({ route, navigation }) => {
   const isFocused = useIsFocused();
@@ -86,15 +89,25 @@ const GroupChatScreen = ({ route, navigation }) => {
       const messagesRef = collection(firestore, 'groups', groupId, 'messages');
       const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
+      const groupDoc = await getDoc(doc(firestore, 'groups', groupId));
+      const encryptedAesKey = groupDoc.data().encryptedKeys[auth.currentUser.uid];
+      const privateKey = await SecureStore.getItemAsync('privateKey');
+      const aesKey = await RSA.decrypt(encryptedAesKey, privateKey);
+
       const unsubscribe = onSnapshot(q, async (snapshot) => {
         const messagesList = await Promise.all(snapshot.docs.map(async (msgDoc) => {
           const messageData = msgDoc.data();
           const userRef = doc(firestore, 'users', messageData.senderId);
           const userSnap = await getDoc(userRef);
           const username = userSnap.data().username;
+
+          const decryptedTextBytes = CryptoJS.AES.decrypt(messageData.text, aesKey);
+          const decryptedText = decryptedTextBytes.toString(CryptoJS.enc.Utf8);
+
           return {
             id: msgDoc.id,
             ...messageData,
+            text: decryptedText,
             username: username,
           }
         }));
@@ -121,9 +134,16 @@ const GroupChatScreen = ({ route, navigation }) => {
 
       const username = userSnap.data().username;
 
+      const groupDoc = await getDoc(doc(firestore, 'groups', groupId));
+      const encryptedAesKey = groupDoc.data().encryptedKeys[auth.currentUser.uid];
+      const privateKey = await SecureStore.getItemAsync('privateKey');
+      const aesKey = await RSA.decrypt(encryptedAesKey, privateKey);
+
+      const encryptedText = CryptoJS.AES.encrypt(messageText, aesKey).toString()
+      
       const messagesRef = collection(firestore, 'groups', groupId, 'messages');
       await addDoc(messagesRef, {
-        text: messageText,
+        text: encryptedText,
         senderId: auth.currentUser.uid,
         username: username,
         createdAt: Timestamp.now(),

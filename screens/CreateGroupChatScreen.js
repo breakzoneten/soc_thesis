@@ -8,6 +8,8 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, collection, getDocs, addDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadString, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { app } from '../firebaseConfig';
+import { RSA } from 'react-native-rsa-native';
+import CryptoJS from 'react-native-crypto-js';
 import * as ImagePicker from 'expo-image-picker';
 
 const Item = ({ user, onPress, isSelected }) => (
@@ -99,12 +101,24 @@ const CreateGroupScreen = ({ navigation }) => {
     }
 
     try {
+      const aesKey = CryptoJS.lib.WordArray.random(16).toString();
+      const encryptedKeys = {};
+
+      for (const userId of selectedUsers) {
+        const userDoc = await getDoc(doc(firestore, "users", userId));
+        const publicKey = userDoc.data().publicKey;
+        const encryptedAesKey = await RSA.encrypt(aesKey, publicKey);
+        encryptedKeys[userId] = encryptedAesKey;
+      }
+
       const groupDocRef = await addDoc(collection(firestore, 'groups'), {
         name: groupName,
         participants: selectedUsers,
         createdAt: new Date(),
         photoURL: photoURL,
+        encryptedKeys: encryptedKeys,
       });
+      
       navigation.navigate('GroupChats', { groupId: groupDocRef.id, groupName, photoURL }); // Navigate to the chat screen or group chat list
     } catch (error) {
       console.error('Error creating group:', error);
