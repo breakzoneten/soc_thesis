@@ -6,6 +6,7 @@ import { app } from '../firebaseConfig';
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPhoneSlash, faPhone, faSync, faMicrophone, faMicrophoneSlash, faVideo, faVideoSlash } from '@fortawesome/free-solid-svg-icons';
+import { Audio } from 'expo-av';
 
 const VideoCallScreen = ({ route, navigation }) => {
   const { user, profilePicture } = route.params;
@@ -19,6 +20,7 @@ const VideoCallScreen = ({ route, navigation }) => {
   const socketRef = useRef(null);
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
+  const ringtone = useRef(new Audio.Sound());
 
 
   const AnimatedPressable = ({ onPress, style, children }) => {
@@ -71,6 +73,7 @@ const VideoCallScreen = ({ route, navigation }) => {
         const answer = await pcRef.current.createAnswer();
         await pcRef.current.setLocalDescription(answer);
         socket.emit('answer', answer);
+        playRingtone();
       } catch (error) {
         console.error('Error handling offer:', error);
       }
@@ -81,6 +84,7 @@ const VideoCallScreen = ({ route, navigation }) => {
       if (pcRef.current) {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+          stopRingtone();
         } catch (error) {
           console.error('Error setting remote description:', error);
         }
@@ -112,7 +116,43 @@ const VideoCallScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     initializeSocket();
+    loadRingtone();
+    return () => {
+      unloadRingtone();
+    }
   }, []);
+
+  const loadRingtone = async () => {
+    try {
+      await ringtone.current.loadAsync(require('../assets/ringtone.mp3'));
+    } catch (error) {
+      console.error('Error loading ringtone:', error);
+    }
+  }
+
+  const playRingtone = async () => {
+    try {
+      await ringtone.current.playAsync();
+    } catch (error) {
+      console.error('Error playing ringtone:', error);
+    }
+  }
+
+  const stopRingtone = async () => {
+    try {
+      await ringtone.current.stopAsync();
+    } catch (error) {
+      console.error('Error stopping ringtone:', error);
+    }
+  }
+
+  const unloadRingtone = async () => {
+    try {
+      await ringtone.current.unloadAsync();
+    } catch (error) {
+      console.error('Error unloading ringtone:', error);
+    }
+  }
 
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
@@ -196,6 +236,7 @@ const VideoCallScreen = ({ route, navigation }) => {
       const offer = await pcRef.current.createOffer();
       await pcRef.current.setLocalDescription(offer);
       socketRef.current.emit('offer', offer);
+      playRingtone();
     } catch (error) {
       console.error('Error creating offer:', error);
     }
