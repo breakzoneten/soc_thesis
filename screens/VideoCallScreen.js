@@ -20,7 +20,6 @@ const VideoCallScreen = ({ route, navigation }) => {
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
 
-
   const AnimatedPressable = ({ onPress, style, children }) => {
     const animatedScale = useRef(new Animated.Value(1)).current;
 
