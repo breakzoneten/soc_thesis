@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
-import { BackHandler, Image, Text, View, StyleSheet, Pressable, Linking } from 'react-native';
+import { BackHandler, Image, Text, View, StyleSheet, Pressable, Linking, TouchableOpacity } from 'react-native';
 import { app } from '../firebaseConfig';
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, orderBy, getDoc, doc, updateDoc, setDoc, serverTimestamp, query, onSnapshot, where } from 'firebase/firestore';
-import { getStorage, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, uploadBytes, getDownloadURL, ref as sRef } from 'firebase/storage';
 import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPaperclip, faImage, faVideo, faPhone } from '@fortawesome/free-solid-svg-icons';
@@ -14,7 +14,6 @@ import * as ScreenCapture from 'expo-screen-capture';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
-import {Notifications} from 'react-native-notifications';
 // import crypto from 'react-native-quick-crypto'; //! UNUSED DUE TO COMMENTED IMPLEMENTATION
 import { RSA } from 'react-native-rsa-native';
 import CryptoJS from 'react-native-crypto-js';
@@ -48,11 +47,11 @@ const ChatScreen = () => {
 
   useEffect(() => {
     const database = getDatabase(app);
-    const userStatusRef = ref(database, 'status/' + user.uid); 
+    const userStatusRef = ref(database, 'status/' + user.uid);
 
     const unsubscribe = onValue(userStatusRef, (snapshot) => {
       const status = snapshot.val();
-      setIsUserOnline(status?.state === 'online'); 
+      setIsUserOnline(status?.state === 'online');
     });
 
     return () => {
@@ -122,7 +121,7 @@ const ChatScreen = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: () => <HeaderWithPicture username={username} profilePicture={profilePicture} isUserOnline={isUserOnline}/>,
+      headerTitle: () => <HeaderWithPicture username={username} profilePicture={profilePicture} isUserOnline={isUserOnline} />,
     });
 
     if (auth.currentUser && user && user.uid) {
@@ -139,19 +138,19 @@ const ChatScreen = () => {
           let decryptedText = '';
           if (data.text && data.aesKey) {
             // try {
-              if (data.user._id !== auth.currentUser.uid) {
-                const decryptedAesKeyBase64 = await RSA.decrypt(data.aesKey, privateKey); //! Decrypt AES key
-                // console.log('Decrypted AES key:', decryptedAesKeyBase64); 
-                const decryptedAesKey = Buffer.from(decryptedAesKeyBase64, 'base64').toString('hex'); //!  Convert decrypted AES key to buffer 
-                // console.log('Decrypted AES key buffer:', decryptedAesKey); 
-                const decryptedTextBytes = CryptoJS.AES.decrypt(data.text, decryptedAesKey); //! Decrypt text using decrypted AES key
-                // console.log('Decrypted text bytes:', decryptedTextBytes); 
-                decryptedText = decryptedTextBytes.toString(CryptoJS.enc.Utf8); //! Convert decrypted text to string
-                // console.log('Decrypted text:', decryptedText);
-                // console.log('Decryption successful');
-              } else {
-                decryptedText = Buffer.from(data._sender, 'base64').toString('utf8'); //! Convert decrypted AES key to buffer 
-              }
+            if (data.user._id !== auth.currentUser.uid) {
+              const decryptedAesKeyBase64 = await RSA.decrypt(data.aesKey, privateKey); //! Decrypt AES key
+              // console.log('Decrypted AES key:', decryptedAesKeyBase64); 
+              const decryptedAesKey = Buffer.from(decryptedAesKeyBase64, 'base64').toString('hex'); //!  Convert decrypted AES key to buffer 
+              // console.log('Decrypted AES key buffer:', decryptedAesKey); 
+              const decryptedTextBytes = CryptoJS.AES.decrypt(data.text, decryptedAesKey); //! Decrypt text using decrypted AES key
+              // console.log('Decrypted text bytes:', decryptedTextBytes); 
+              decryptedText = decryptedTextBytes.toString(CryptoJS.enc.Utf8); //! Convert decrypted text to string
+              // console.log('Decrypted text:', decryptedText);
+              // console.log('Decryption successful');
+            } else {
+              decryptedText = Buffer.from(data._sender, 'base64').toString('utf8'); //! Convert decrypted AES key to buffer 
+            }
             // } catch (error) {
             //   console.error('Error decrypting text:', error.message);
             // }
@@ -370,7 +369,7 @@ const ChatScreen = () => {
 
       const blob = await response.blob();
       const storage = getStorage(app);
-      const fileRef = ref(storage, `${fileType}/${new Date().getTime()}_${auth.currentUser.uid}`);
+      const fileRef = sRef(storage, `${fileType}/${new Date().getTime()}_${auth.currentUser.uid}`);
 
       await uploadBytes(fileRef, blob);
       const downloadURL = await getDownloadURL(fileRef);
@@ -392,13 +391,13 @@ const ChatScreen = () => {
         position: 'relative',
       }}>
         <View style={styles.imageContainer}>
-        <Image source={{ uri: profilePicture }} style={{
-          width: 45,
-          height: 45,
-          borderRadius: 25,
-          marginRight: 10,
-        }} />
-        {isUserOnline && <View style={styles.onlineIndicator}/>}
+          <Image source={{ uri: profilePicture }} style={{
+            width: 45,
+            height: 45,
+            borderRadius: 25,
+            marginRight: 10,
+          }} />
+          {isUserOnline && <View style={styles.onlineIndicator} />}
         </View>
         <Text style={{
           color: '#fff',
@@ -448,6 +447,33 @@ const ChatScreen = () => {
   };
 
   const CustomBubble = (props) => {
+    const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+    const MAX_WIDTH = 300;
+    const MAX_HEIGHT = 300;
+
+    useEffect(() => {
+      if (props.currentMessage.fileType === 'image' && props.currentMessage.file) {
+        Image.getSize(props.currentMessage.file, (width, height) => {
+          let newWidth = width;
+          let newHeight = height;
+
+          if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+            const aspectRatio = width / height;
+
+            if (width > height) {
+              newWidth = MAX_WIDTH;
+              newHeight = MAX_WIDTH / aspectRatio;
+            } else {
+              newHeight = MAX_HEIGHT;
+              newWidth = MAX_HEIGHT * aspectRatio;
+            }
+
+          }
+          setImageDimensions({ width: newWidth, height: newHeight });
+        });
+      }
+    }, [props.currentMessage.file]);
+
     return (
       <View>
         <Bubble
@@ -462,22 +488,24 @@ const ChatScreen = () => {
               paddingHorizontal: 5,
             },
           }}
-          renderTime={
-            () => <Text style={[
+          renderTime={() => (
+            <Text style={[
               props.position === 'left' ? styles.timeLeft : styles.timeRight,
               styles.timeText,
-            ]}>{props.currentMessage.createdAt.toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}</Text>
-          }
+            ]}>
+              {props.currentMessage.createdAt.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
+          )}
         />
         {props.currentMessage.fileType === 'image' && (
           <Image
             source={{ uri: props.currentMessage.file }}
             style={{
-              width: 200,
-              height: 200,
+              width: imageDimensions.width,
+              height: imageDimensions.height,
               borderRadius: 20,
               marginTop: 5,
             }}
@@ -592,7 +620,7 @@ const ChatScreen = () => {
           name: username,
           avatar: profilePicture || './assets/profilepic.jpg',
         }}
-        renderBubble={CustomBubble}
+        renderBubble={props => <CustomBubble { ...props }/>}
         isTyping={isTyping}
         onInputTextChanged={handleInputTextChanged}
         renderMessageText={CustomMessageText}
@@ -675,7 +703,7 @@ const styles = StyleSheet.create({
     height: 12.5,
     borderRadius: 7.5,
     backgroundColor: '#00dd00',
-  }
+  },
 });
 
 export default ChatScreen;
