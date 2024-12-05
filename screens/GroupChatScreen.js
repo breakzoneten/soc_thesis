@@ -91,8 +91,11 @@ const GroupChatScreen = ({ route, navigation }) => {
 
       const groupDoc = await getDoc(doc(firestore, 'groups', groupId));
       const encryptedAesKey = groupDoc.data().encryptedKeys[auth.currentUser.uid];
+      console.log('Encrypted AES key:', encryptedAesKey);
       const privateKey = await SecureStore.getItemAsync('privateKey');
+      console.log('Private key:', privateKey);
       const aesKey = await RSA.decrypt(encryptedAesKey, privateKey);
+      console.log('AES key:', aesKey);
 
       const unsubscribe = onSnapshot(q, async (snapshot) => {
         const messagesList = await Promise.all(snapshot.docs.map(async (msgDoc) => {
@@ -102,7 +105,10 @@ const GroupChatScreen = ({ route, navigation }) => {
           const username = userSnap.data().username;
 
           const decryptedTextBytes = CryptoJS.AES.decrypt(messageData.text, aesKey);
+          console.log('Decrypted text bytes:', decryptedTextBytes);
           const decryptedText = decryptedTextBytes.toString(CryptoJS.enc.Utf8);
+          console.log('Decrypted text:', decryptedText);
+          console.log('Decryption successful');
 
           return {
             id: msgDoc.id,
@@ -136,10 +142,14 @@ const GroupChatScreen = ({ route, navigation }) => {
 
       const groupDoc = await getDoc(doc(firestore, 'groups', groupId));
       const encryptedAesKey = groupDoc.data().encryptedKeys[auth.currentUser.uid];
+      console.log('Encrypted AES key:', encryptedAesKey);
       const privateKey = await SecureStore.getItemAsync('privateKey');
+      console.log('Private key:', privateKey);
       const aesKey = await RSA.decrypt(encryptedAesKey, privateKey);
+      console.log('AES key:', aesKey);
 
       const encryptedText = CryptoJS.AES.encrypt(messageText, aesKey).toString()
+      console.log('Encrypted text:', encryptedText);
       
       const messagesRef = collection(firestore, 'groups', groupId, 'messages');
       await addDoc(messagesRef, {

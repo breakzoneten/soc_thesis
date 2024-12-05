@@ -140,14 +140,14 @@ const ChatScreen = () => {
             // try {
             if (data.user._id !== auth.currentUser.uid) {
               const decryptedAesKeyBase64 = await RSA.decrypt(data.aesKey, privateKey); //! Decrypt AES key
-              // console.log('Decrypted AES key:', decryptedAesKeyBase64); 
+              console.log('Decrypted AES key:', decryptedAesKeyBase64); 
               const decryptedAesKey = Buffer.from(decryptedAesKeyBase64, 'base64').toString('hex'); //!  Convert decrypted AES key to buffer 
-              // console.log('Decrypted AES key buffer:', decryptedAesKey); 
+              console.log('Decrypted AES key buffer:', decryptedAesKey); 
               const decryptedTextBytes = CryptoJS.AES.decrypt(data.text, decryptedAesKey); //! Decrypt text using decrypted AES key
-              // console.log('Decrypted text bytes:', decryptedTextBytes); 
+              console.log('Decrypted text bytes:', decryptedTextBytes); 
               decryptedText = decryptedTextBytes.toString(CryptoJS.enc.Utf8); //! Convert decrypted text to string
-              // console.log('Decrypted text:', decryptedText);
-              // console.log('Decryption successful');
+              console.log('Decrypted text:', decryptedText);
+              console.log('Decryption successful');
             } else {
               decryptedText = Buffer.from(data._sender, 'base64').toString('utf8'); //! Convert decrypted AES key to buffer 
             }
@@ -219,18 +219,18 @@ const ChatScreen = () => {
 
     try {
       const aesKey = CryptoJS.lib.WordArray.random(16).toString(); //! Generate random AES key
-      // console.log('AES key:', aesKey); 
+      console.log('AES key:', aesKey); 
 
       let encryptedText = '';
       if (text) {
         encryptedText = CryptoJS.AES.encrypt(text, aesKey).toString(); //! Encrypt text using AES key
-        // console.log('Encrypted text:', encryptedText); 
+        console.log('Encrypted text:', encryptedText); 
       }
 
       const aeseKeyBuffer = Buffer.from(aesKey, 'hex'); //! Convert AES key to buffer
-      // console.log('AES key buffer:', aeseKeyBuffer);
+      console.log('AES key buffer:', aeseKeyBuffer);
       const encryptedAesKey = await RSA.encrypt(aeseKeyBuffer.toString('base64'), publicKey); //! Encrypt AES key using RSA public key
-      // console.log('Encrypted AES key:', encryptedAesKey);
+      console.log('Encrypted AES key:', encryptedAesKey);
 
       const messageData = {
         _id,
