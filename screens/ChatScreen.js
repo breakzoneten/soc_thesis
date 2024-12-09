@@ -31,6 +31,8 @@ const ChatScreen = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [publicKey, setPublicKey] = useState('');
   const [privateKey, setPrivateKey] = useState('');
+  const [aesKey, setAesKey] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState(null);
   const auth = getAuth(app);
   const firestore = getFirestore(app);
   const route = useRoute();
@@ -170,8 +172,8 @@ const ChatScreen = () => {
                 ? (profilePicture || './assets/profilepic.jpg')
                 : user.profilePicture,
             },
-            file: data.file || null,
-            fileType: data.fileType || null,
+            file: data.file || '',
+            fileType: data.fileType || '',
           };
         }));
         setMessages(messagesFirestore);
@@ -243,8 +245,9 @@ const ChatScreen = () => {
           avatar: sender._id === auth.currentUser.uid ? (profilePicture || './assets/profilepic.jpg') : user.profilePicture,
         },
         participants: participantIds,
-        file: fileURL || null,
-        fileType: fileType || null,
+        file: fileURL || '',
+        fileType: fileType || '',
+        fileName: message.fileName,
         _sender: Buffer.from(text, 'utf8').toString('base64'),
       };
 
@@ -287,10 +290,12 @@ const ChatScreen = () => {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const imageUri = result.assets[0].uri;
+        const fileName = result.assets[0].fileName || 'image.jpg';
         // console.log('Image picked:', imageUri);
 
         try {
           const fileURL = await uploadFile(imageUri, 'images');
+          const encryptedFileURL = CryptoJS.AES.encrypt(fileURL, aesKey).toString(); //! Encrypt file URL using AES key
           // console.log('File URL:', fileURL);
 
           const message = {
@@ -302,8 +307,11 @@ const ChatScreen = () => {
               avatar: profilePicture || './assets/profilepic.jpg',
             },
             text: '',
+            file: encryptedFileURL, //! Encrypted file URL
+            fileName: fileName,
+            fileType: 'image',
           };
-          onSend([message], fileURL, 'image');
+          onSend([message], encryptedFileURL, 'image');
         } catch (uploadError) {
           console.error('Error uploading file:', uploadError);
         }
@@ -328,10 +336,15 @@ const ChatScreen = () => {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const fileUri = result.assets[0].uri;
+        const fileName = result.assets[0].name;
+        setSelectedFileName(fileName);
+        console.log('Document picked:', fileUri);
+        console.log('Document name:', fileName);  
 
         try {
 
           const fileURL = await uploadFile(fileUri, 'documents');
+          const encryptedFileURL = CryptoJS.AES.encrypt(fileURL, aesKey).toString(); //! Encrypt file URL using AES key
           // console.log('File URL obtained:', fileURL);
           const message = {
             _id: new Date().getTime().toString(),
@@ -342,8 +355,11 @@ const ChatScreen = () => {
               avatar: profilePicture || './assets/profilepic.jpg',
             },
             text: '',
+            file: encryptedFileURL, //! Encrypted file URL
+            fileName: fileName,
+            fileType: 'document',
           };
-          onSend([message], fileURL, 'document');
+          onSend([message], encryptedFileURL, 'document', fileName);
           // console.log('Document message sent');
         } catch (uploadError) {
           console.error('Error uploading document:', uploadError);
@@ -451,9 +467,11 @@ const ChatScreen = () => {
     const MAX_WIDTH = 300;
     const MAX_HEIGHT = 300;
 
+    const decryptedUri = CryptoJS.AES.decrypt(props.currentMessage.file, aesKey).toString(CryptoJS.enc.Utf8); //! Decrypt file URL using AES key
+
     useEffect(() => {
-      if (props.currentMessage.fileType === 'image' && props.currentMessage.file) {
-        Image.getSize(props.currentMessage.file, (width, height) => {
+      if (props.currentMessage.fileType === 'image' && decryptedUri) {
+        Image.getSize(decryptedUri, (width, height) => {
           let newWidth = width;
           let newHeight = height;
 
@@ -472,7 +490,7 @@ const ChatScreen = () => {
           setImageDimensions({ width: newWidth, height: newHeight });
         });
       }
-    }, [props.currentMessage.file]);
+    }, [decryptedUri]);
 
     return (
       <View>
@@ -502,7 +520,7 @@ const ChatScreen = () => {
         />
         {props.currentMessage.fileType === 'image' && (
           <Image
-            source={{ uri: props.currentMessage.file }}
+            source={{ uri: decryptedUri }}
             style={{
               width: imageDimensions.width,
               height: imageDimensions.height,
@@ -527,9 +545,9 @@ const ChatScreen = () => {
               fontSize: 16,
               fontFamily: 'TitilliumWeb_400Regular',
             }}
-            onPress={() => Linking.openURL(props.currentMessage.file)}
+            onPress={() => Linking.openURL(decryptedUri)}
           >
-            View Document.
+            {selectedFileName || 'Document'}
           </Text>
         )}
       </View>
