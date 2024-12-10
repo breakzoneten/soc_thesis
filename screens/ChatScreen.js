@@ -247,9 +247,13 @@ const ChatScreen = () => {
         participants: participantIds,
         file: fileURL || '',
         fileType: fileType || '',
-        fileName: message.fileName,
+        // fileName: message.fileName,
         _sender: Buffer.from(text, 'utf8').toString('base64'),
       };
+
+      if (message.fileName) {
+        messageData.fileName = message.fileName;
+      }
 
       await addDoc(collection(firestore, 'chats'), messageData);
       // console.log('Message sent successfully!');
