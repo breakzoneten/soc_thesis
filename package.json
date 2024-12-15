@@ -57,7 +57,6 @@
     "react-dom": "18.2.0",
     "react-native": "^0.74.5",
     "react-native-bcrypt": "^2.4.0",
-    "react-native-canvas": "^0.1.40",
     "react-native-cli": "^2.0.1",
     "react-native-crypto": "^2.2.0",
     "react-native-crypto-js": "^1.0.0",
