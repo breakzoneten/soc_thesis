@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Image, Text, StyleSheet, Pressable, Animated } from 'react-native';
-import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
+import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription, MediaStream } from 'react-native-webrtc';
+// import Canvas from 'react-native-canvas';
 import io from 'socket.io-client';
 import { app } from '../firebaseConfig';
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
@@ -16,6 +17,7 @@ const VideoCallScreen = ({ route, navigation }) => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isUsingFrontCamera, setIsUsingFrontCamera] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isCameraOff, setIsCameraOff] = useState(false);
   const socketRef = useRef(null);
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
@@ -235,10 +237,40 @@ const VideoCallScreen = ({ route, navigation }) => {
       localStream.getVideoTracks().forEach(track => {
         track.enabled = !track.enabled;
         setIsCameraOn(track.enabled);
+        setIsCameraOff(!track.enabled);
+
+        if (!track.enabled) {
+          const blackStream = new MediaStream();
+          const blackVideoTrack = createBlackVideoTrack();
+          blackStream.addTrack(blackVideoTrack);
+
+          const sender = pcRef.current.getSenders().find(s => s.track.kind === 'video');
+          if (sender) {
+            sender.replaceTrack(blackVideoTrack);
+          }
+        } else {
+          const videoTrack = localStream.getVideoTracks()[0];
+          const sender = pcRef.current.getSenders().find(s => s.track.kind === 'video');
+          if (sender) {
+            sender.replaceTrack(videoTrack);
+          }
+        }
       });
     }
   };
 
+  const createBlackVideoTrack = () => {
+    const canvas = document.createElement('canvas');  
+    canvas.width = 640;
+    canvas.height = 480;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#000';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const stream = canvas.captureStream(30);
+    return stream.getVideoTracks()[0];
+  }
+  
   const switchCamera = async () => {
     setIsUsingFrontCamera(prevState => !prevState);
     if (localStream) {
@@ -277,6 +309,9 @@ const VideoCallScreen = ({ route, navigation }) => {
           style={styles.rtcView}
           objectFit="cover"
         />
+      )}
+      {isCameraOff && (
+        <View style={styles.blackScreen} />
       )}
       {remoteStream && (
         <RTCView
@@ -371,6 +406,13 @@ const styles = StyleSheet.create({
     height: '43%',
     backgroundColor: '#000',
     zIndex: 0,
+  },
+  blackScreen: {
+    position: 'absolute',
+    width: '100%',
+    height: '43%',
+    backgroundColor: '#000',
+    zIndex: 1,
   },
   buttonContainer: {
     margin: 10,
