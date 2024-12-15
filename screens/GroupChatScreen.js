@@ -156,9 +156,12 @@ const GroupChatScreen = ({ route, navigation }) => {
       const encryptedText = messageText ? CryptoJS.AES.encrypt(messageText, aesKey).toString() : "";
       console.log('Encrypted text:', encryptedText);
 
+      const encryptedFileName = messageData.fileName ? CryptoJS.AES.encrypt(messageData.fileName, aesKey).toString() : '';
+      console.log('Encrypted file name:', encryptedFileName);
+
       const messagesRef = collection(firestore, 'groups', groupId, 'messages');
       console.log('Sending message:', encryptedText);
-      console.log('Sender ID:', auth.currentUser.uid); 
+      console.log('Sender ID:', auth.currentUser.uid);
       console.log('Username:', username);
       console.log('Created at:', Timestamp.now());
       console.log('Message data:', messageData);
@@ -169,7 +172,8 @@ const GroupChatScreen = ({ route, navigation }) => {
         username: username,
         createdAt: Timestamp.now(),
         file: messageData.file || '',
-        fileName: messageData.fileName || '',
+        // fileName: messageData.fileName || '',
+        fileName: encryptedFileName,
         fileType: messageData.fileType || '',
       });
       setMessageText('');
@@ -221,7 +225,7 @@ const GroupChatScreen = ({ route, navigation }) => {
       });
 
       console.log('Document result:', result);
-      
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const fileUri = result.assets[0].uri;
         const fileName = result.assets[0].name;
@@ -286,58 +290,72 @@ const GroupChatScreen = ({ route, navigation }) => {
         <FlatList
           ref={flatlistRef}
           data={messages}
-          renderItem={({ item }) => (
-            <View style={[
-              styles.messageContainer,
-              item.senderId === auth.currentUser.uid ? styles.currentUserMessage : styles.otherUserMessage
-            ]}>
-              <Text style={{
-                fontSize: 16,
-                fontFamily: 'TitilliumWeb_400Regular',
-                alignSelf: item.senderId === auth.currentUser.uid ? 'flex-end' : 'flex-start',
-              }}>{item.text}</Text>
-              {item.file && (
-                item.fileType === 'image' ? (
-                  <ImageComponent file={item.file} aesKey={aesKey} />
-                ) : (
-                  <Text
-                    style={{
-                      color: "#4c669f",
-                      marginVertical: 10,
-                      backgroundColor: "#fff",
-                      textDecorationLine: "underline",
-                      border: 1,
-                      borderColor: "#000",
-                      borderRadius: 22,
-                      paddingHorizontal: 15,
-                      paddingBottom: 5,
-                      paddingTop: 5,
-                      fontSize: 16,
-                      fontFamily: 'TitilliumWeb_400Regular',
-                    }}
-                  onPress={() => Linking.openURL(CryptoJS.AES.decrypt(item.file, aesKey).toString(CryptoJS.enc.Utf8))}
-                  >
-                    {item.fileName || "View Document"}
-                  </Text>
-                ))}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: 5,
-                }}
-              >
-                <Text style={styles.messageText}>{item.username}</Text>
-                <Divider
-                  orientation="vertical"
-                  width={1}
-                  style={{ backgroundColor: 'grey', marginHorizontal: 3 }}
-                />
-                <Text style={styles.messageTime}>{new Date(item.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+          renderItem={({ item }) => {
+
+            let decryptedFileName = '';
+            if (item.fileName) {
+              try {
+                decryptedFileName = CryptoJS.AES.decrypt(item.fileName, aesKey).toString(CryptoJS.enc.Utf8);
+                console.log("Decrypted file name: ", decryptedFileName);
+              } catch (error) {
+                console.error("Decryption failed for fileName: ", error);
+              }
+            }
+
+            return (
+              <View style={[
+                styles.messageContainer,
+                item.senderId === auth.currentUser.uid ? styles.currentUserMessage : styles.otherUserMessage
+              ]}>
+                <Text style={{
+                  fontSize: 16,
+                  fontFamily: 'TitilliumWeb_400Regular',
+                  alignSelf: item.senderId === auth.currentUser.uid ? 'flex-end' : 'flex-start',
+                }}>{item.text}</Text>
+                {item.file && (
+                  item.fileType === 'image' ? (
+                    <ImageComponent file={item.file} aesKey={aesKey} />
+                  ) : (
+                    <Text
+                      style={{
+                        color: "#4c669f",
+                        marginVertical: 10,
+                        backgroundColor: "#fff",
+                        textDecorationLine: "underline",
+                        border: 1,
+                        borderColor: "#000",
+                        borderRadius: 22,
+                        paddingHorizontal: 15,
+                        paddingBottom: 5,
+                        paddingTop: 5,
+                        fontSize: 16,
+                        fontFamily: 'TitilliumWeb_400Regular',
+                      }}
+                      onPress={() => Linking.openURL(CryptoJS.AES.decrypt(item.file, aesKey).toString(CryptoJS.enc.Utf8))}
+                    >
+                      {/* {item.fileName || "View Document"} */}
+                      {decryptedFileName || "View Document"}
+                    </Text>
+                  ))}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: 5,
+                  }}
+                >
+                  <Text style={styles.messageText}>{item.username}</Text>
+                  <Divider
+                    orientation="vertical"
+                    width={1}
+                    style={{ backgroundColor: 'grey', marginHorizontal: 3 }}
+                  />
+                  <Text style={styles.messageTime}>{new Date(item.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                </View>
               </View>
-            </View>
-          )}
+            )
+          }}
           keyExtractor={item => item.id}
           style={styles.messagesList}
           showsVerticalScrollIndicator={false}
