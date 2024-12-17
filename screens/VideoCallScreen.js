@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Image, Text, StyleSheet, Pressable, Animated } from 'react-native';
-import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription} from 'react-native-webrtc';
+import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
 import io from 'socket.io-client';
 import { app } from '../firebaseConfig';
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
@@ -16,6 +16,7 @@ const VideoCallScreen = ({ route, navigation }) => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isUsingFrontCamera, setIsUsingFrontCamera] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isCameraOff, setIcCameraOff] = useState(false);
   const socketRef = useRef(null);
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
@@ -235,9 +236,24 @@ const VideoCallScreen = ({ route, navigation }) => {
       localStream.getVideoTracks().forEach(track => {
         track.enabled = !track.enabled;
         setIsCameraOn(track.enabled);
+        setIcCameraOff(!track.enabled);
+        console.log('Camera is on:', track.enabled);
+        if (socketRef.current) {
+          socketRef.current.emit('toggle-camera', { isCameraOn: track.enabled });
+        }
       });
     }
   };
+
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.on('toggle-camera', ({ isCameraOn }) => {
+        console.log('Received camera toggle:', isCameraOn);
+        setIsCameraOn(isCameraOn);
+        setIcCameraOff(!isCameraOn);
+      })
+    }
+  }, []);
 
   const switchCamera = async () => {
     setIsUsingFrontCamera(prevState => !prevState);
@@ -278,12 +294,18 @@ const VideoCallScreen = ({ route, navigation }) => {
           objectFit="cover"
         />
       )}
+      {isCameraOff && (
+        <View style={styles.blackScreen} />
+      )}
       {remoteStream && (
         <RTCView
           streamURL={remoteStream.toURL()}
           style={styles.rtcView}
           objectFit="cover"
         />
+      )}
+      {isCameraOff && (
+        <View style={styles.blackScreen} />
       )}
       <View style={{
         flexDirection: 'row',
@@ -371,6 +393,13 @@ const styles = StyleSheet.create({
     height: '43%',
     backgroundColor: '#000',
     zIndex: 0,
+  },
+  blackScreen: {
+    position: 'absolute',
+    width: '100%',
+    height: '43%',
+    backgroundColor: '#000',
+    zIndex: 1,
   },
   buttonContainer: {
     margin: 10,

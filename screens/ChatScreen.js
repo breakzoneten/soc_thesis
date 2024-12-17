@@ -204,7 +204,7 @@ const ChatScreen = () => {
     }
   }, [firestore, auth.currentUser, user, participantIds]);
 
-  const onSend = useCallback(async (messages = [], fileURL = null, fileType = null) => {
+  const onSend = useCallback(async (messages = [], fileURL = null, fileType = null, fileName = null) => {
     const message = messages[0];
 
     if (!message || !message._id || !message.createdAt || (!message.text && !fileURL) || !message.user) {
@@ -234,6 +234,9 @@ const ChatScreen = () => {
       const encryptedAesKey = await RSA.encrypt(aeseKeyBuffer.toString('base64'), publicKey); //! Encrypt AES key using RSA public key
       console.log('Encrypted AES key:', encryptedAesKey);
 
+      const encryptedFileName = fileName ? CryptoJS.AES.encrypt(fileName, aesKey).toString() : '';
+      console.log('Encrypted file name:', encryptedFileName);
+
       const messageData = {
         _id,
         createdAt: new Date(),
@@ -248,12 +251,13 @@ const ChatScreen = () => {
         file: fileURL || '',
         fileType: fileType || '',
         // fileName: message.fileName,
+        fileName: encryptedFileName,
         _sender: Buffer.from(text, 'utf8').toString('base64'),
       };
 
-      if (message.fileName) {
-        messageData.fileName = message.fileName;
-      }
+      // if (message.fileName) {
+      //   messageData.fileName = encryptedFileName;
+      // }
 
       await addDoc(collection(firestore, 'chats'), messageData);
       // console.log('Message sent successfully!');
@@ -472,6 +476,15 @@ const ChatScreen = () => {
     const MAX_HEIGHT = 300;
 
     const decryptedUri = CryptoJS.AES.decrypt(props.currentMessage.file, aesKey).toString(CryptoJS.enc.Utf8); //! Decrypt file URL using AES key
+
+    let decryptedFileName = '';
+    if (props.currentMessage.fileName) {
+      try {
+        decryptedFileName = CryptoJS.AES.decrypt(props.currentMessage.fileName, aesKey).toString(CryptoJS.enc.Utf8); //! Decrypt file name using AES key
+      } catch (error) {
+        console.error('Error decrypting file name:', error);
+      }
+    }
 
     useEffect(() => {
       if (props.currentMessage.fileType === 'image' && decryptedUri) {
