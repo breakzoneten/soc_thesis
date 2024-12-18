@@ -34,6 +34,10 @@ export default {
     },
     "plugins": [
         "@config-plugins/react-native-webrtc",
+        "onesignal-expo-plugin", 
+        {
+          mode: "development",
+        }
     ],
     extra: {
       apiKey: process.env.API_KEY,
@@ -43,6 +47,7 @@ export default {
       messagingSenderId: process.env.MESSAGING_SENDER_ID,
       appId:process.env.APP_ID,
       measurementId: process.env.MEASUREMENT_ID,
+      "oneSignalAppId": "621ffd52-6a10-4c59-9cc8-44c61e19635c",
       "eas": {
         "projectId": "82439ae0-c4b7-42bd-94db-91d341f6d613"
       }
