@@ -32,6 +32,10 @@ export default {
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.SOC",
+    },
     "plugins": [
       "@config-plugins/react-native-webrtc",
       [
