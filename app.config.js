@@ -34,6 +34,16 @@ export default {
     },
     "plugins": [
       "@config-plugins/react-native-webrtc",
+      [
+        "expo-notifications", {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "sound": [
+            "./assets/notif-sound/notif.wav",
+          ]
+        }       
+      ]
     ],
     extra: {
       apiKey: process.env.API_KEY,

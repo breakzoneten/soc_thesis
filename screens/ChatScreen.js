@@ -47,6 +47,36 @@ const ChatScreen = () => {
     navigation.navigate('AudioCall', { user, profilePicture });
   }
 
+  const getRecipientPushToken = async (recipientUid) => {
+    const userDoc = await getDoc(doc(firestore, 'users', recipientUid));
+    if (userDoc.exists()) {
+      return userDoc.data().expoPushToken;
+    } else {
+      console.error('Recipient user document not found');
+      return null;
+    }
+  }
+
+  const sendPushNotification = async (expoPushToken, message) => {
+    const messageBody = {
+      to: expoPushToken,
+      sound: 'default',
+      title: `New message from ${username}`,
+      body: message.text,
+      data: { message },
+    };
+  
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        // 'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messageBody),
+    });
+  };
+
   useEffect(() => {
     const database = getDatabase(app);
     const userStatusRef = ref(database, 'status/' + user.uid);
@@ -265,6 +295,11 @@ const ChatScreen = () => {
         typing: '',
         lastTyped: serverTimestamp(),
       }, { merge: true });
+
+      const recipientPushToken = await getRecipientPushToken(user.uid);
+      if (recipientPushToken) {
+        await sendPushNotification(recipientPushToken, messageData);
+      }
     } catch (error) {
       console.error('Error sending message: ', error);
     }

@@ -17,12 +17,21 @@ import CreateGroupChat from './screens/CreateGroupChatScreen';
 import GroupChatScreen from './screens/GroupChatScreen';
 import ForgotPassword from './screens/ForgotPassword';
 import GroupChats from './screens/GroupChats';
+import * as Notifications from 'expo-notifications';
 import { useFonts, TitilliumWeb_400Regular, TitilliumWeb_600SemiBold } from '@expo-google-fonts/titillium-web';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 const Stack = createNativeStackNavigator();
 const uuid = uuidv4();
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 export default function App() {
   let [fontsLoaded, fontError] = useFonts({
