@@ -17,7 +17,7 @@ import CreateGroupChat from './screens/CreateGroupChatScreen';
 import GroupChatScreen from './screens/GroupChatScreen';
 import ForgotPassword from './screens/ForgotPassword';
 import GroupChats from './screens/GroupChats';
-import * as Notifications from 'expo-notifications';
+// import * as Notifications from 'expo-notifications';
 import { useFonts, TitilliumWeb_400Regular, TitilliumWeb_600SemiBold } from '@expo-google-fonts/titillium-web';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,13 +25,13 @@ import { v4 as uuidv4 } from 'uuid';
 const Stack = createNativeStackNavigator();
 const uuid = uuidv4();
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge: true,
+//   }),
+// });
 
 export default function App() {
   let [fontsLoaded, fontError] = useFonts({
@@ -115,8 +115,8 @@ export default function App() {
 //? - configure pin for global storage
 
 //! --------------- UNUSED SCREENS / COMPONENTS --------------- //
-// - SettingsScreen.js (Screen)
-// - Header.js (Component)
+//! - SettingsScreen.js (Screen)
+//! - Header.js (Component)
 
 //* ------------------------------ FINAL FEATURES ------------------------------ //
 //* Login (Authentication)

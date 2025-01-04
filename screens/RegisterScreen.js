@@ -17,26 +17,26 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import RSA from 'react-native-rsa-native';
 
-const registerForPushNotificationsAsync = async () => {
-  let token;
-  if (Constants.isDevice) {
-    const {status: existingStatus} = await Notifications.getPermissionsAsync();
-    let finallStatus = existingStatus;
-    if (existingStatus !== "granted") {
-      const {status} = await Notifications.requestPermissionsAsync();
-      finallStatus = status;
-    }
-    if (finallStatus !== "granted") {
-      Alert.alert("Failed to get push token for push notification!");
-      return;
-    }
-    token = (await Notifications.getExpoPushTokenAsync()).data;
-    console.log(token);
-  } else {
-    alert("Must use physical device for Push Notifications");
-  }
-  return token;
-};
+// const registerForPushNotificationsAsync = async () => {
+//   let token;
+//   if (Constants.isDevice) {
+//     const {status: existingStatus} = await Notifications.getPermissionsAsync();
+//     let finallStatus = existingStatus;
+//     if (existingStatus !== "granted") {
+//       const {status} = await Notifications.requestPermissionsAsync();
+//       finallStatus = status;
+//     }
+//     if (finallStatus !== "granted") {
+//       Alert.alert("Failed to get push token for push notification!");
+//       return;
+//     }
+//     token = (await Notifications.getExpoPushTokenAsync()).data;
+//     console.log(token);
+//   } else {
+//     alert("Must use physical device for Push Notifications");
+//   }
+//   return token;
+// };
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
@@ -97,7 +97,6 @@ const RegisterScreen = () => {
     const keys = await RSA.generateKeys(2048);
     const { public: publicKey, private: privateKey } = keys;
 
-    // await AsyncStorage.setItem('privateKey', privateKey);
     await SecureStore.setItemAsync('privateKey', privateKey);
     return publicKey;
   }
@@ -140,7 +139,7 @@ const RegisterScreen = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const pushToken = await registerForPushNotificationsAsync();
+      // const pushToken = await registerForPushNotificationsAsync();
 
       await sendEmailVerification(user);
       ToastAndroid.show("Email verification sent!", ToastAndroid.SHORT);
@@ -182,7 +181,7 @@ const RegisterScreen = () => {
         email: email,
         profilePicture: imageUrl,
         publicKey: publicKey,
-        expoPushToken: pushToken,
+        // expoPushToken: pushToken,
       });
       
       setAuthError("Account created successfully!");
