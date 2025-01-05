@@ -10,9 +10,9 @@ import { app } from '../firebaseConfig';
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+// import { registerForPushNotificationsAsync } from './Notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-// import QuickCrypto from 'react-native-quick-crypto';
 import RSA from 'react-native-rsa-native';
 
 const RegisterScreen = () => {
@@ -115,6 +115,8 @@ const RegisterScreen = () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      // await  registerForPushNotificationsAsync(user.uid);
 
       await sendEmailVerification(user);
       ToastAndroid.show("Email verification sent!", ToastAndroid.SHORT);

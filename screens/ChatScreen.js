@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPaperclip, faImage, faVideo, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { Composer, GiftedChat, Bubble, MessageText, InputToolbar, Send, Day } from 'react-native-gifted-chat';
 import { LinearGradient } from 'expo-linear-gradient';
+// import { getPushTokenForUser, sendPushNotification } from './Notifications';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -45,16 +46,6 @@ const ChatScreen = () => {
 
   const AudioC = () => {
     navigation.navigate('AudioCall', { user, profilePicture });
-  }
-
-  const getRecipientPushToken = async (recipientUid) => {
-    const userDoc = await getDoc(doc(firestore, 'users', recipientUid));
-    if (userDoc.exists()) {
-      return userDoc.data().expoPushToken;
-    } else {
-      console.error('Recipient user document not found');
-      return null;
-    }
   }
 
   useEffect(() => {
@@ -230,6 +221,24 @@ const ChatScreen = () => {
     }
 
     try {
+      // const recipientUid = user.uid;
+      // const expoPushToken = await getPushTokenForUser(recipientUid);
+
+      // if (expoPushToken) {
+      //   const message = {
+      //     title: 'New message',
+      //     body: `${sender._id === auth.currentUser.uid ? username : user.username} sent you a message.`,
+      //     data: {
+      //       screen: 'ChatScreen',
+      //       params: {
+      //         user: sender._id === auth.currentUser.uid ? user : sender,
+      //         profilePicture: sender._id === auth.currentUser.uid ? user.profilePicture : profilePicture,
+      //       },
+      //     },
+      //   };
+      //   await sendPushNotification(expoPushToken, message);
+      // }
+
       const aesKey = CryptoJS.lib.WordArray.random(16).toString(); //! Generate random AES key
       console.log('AES key:', aesKey); 
 
@@ -275,11 +284,6 @@ const ChatScreen = () => {
         typing: '',
         lastTyped: serverTimestamp(),
       }, { merge: true });
-
-      // const recipientPushToken = await getRecipientPushToken(user.uid);
-      // if (recipientPushToken) {
-      //   await sendPushNotification(recipientPushToken, messageData);
-      // }
     } catch (error) {
       console.error('Error sending message: ', error);
     }

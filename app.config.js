@@ -57,6 +57,5 @@ export default {
         "projectId": "82439ae0-c4b7-42bd-94db-91d341f6d613"
       }
     }
-
   }
 }

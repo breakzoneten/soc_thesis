@@ -154,3 +154,8 @@ export default function App() {
 //* Group Chat Screen
 
 //* Log Out
+
+//TODO
+//TODO: - notifications 
+      //? messages
+      //? video / audio calls
