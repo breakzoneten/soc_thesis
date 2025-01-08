@@ -10,7 +10,7 @@ import { app } from '../firebaseConfig';
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-// import { registerForPushNotificationsAsync } from './Notifications';
+import { registerForPushNotificationsAsync } from './Notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import RSA from 'react-native-rsa-native';
@@ -116,8 +116,6 @@ const RegisterScreen = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // await  registerForPushNotificationsAsync(user.uid);
-
       await sendEmailVerification(user);
       ToastAndroid.show("Email verification sent!", ToastAndroid.SHORT);
       
@@ -151,6 +149,11 @@ const RegisterScreen = () => {
       
       const publicKey = await generateKeyPair();
       
+      const expoPushToken = await registerForPushNotificationsAsync(user.uid);
+      if (!expoPushToken) {
+        throw new Error("Failed to get Expo push token. Please try again later.");
+      }
+
       const userDoc = doc(firestore, "users", user.uid);
       await setDoc(userDoc, {
         uid: user.uid,
@@ -158,6 +161,7 @@ const RegisterScreen = () => {
         email: email,
         profilePicture: imageUrl,
         publicKey: publicKey,
+        expoPushToken: expoPushToken || null,
       });
       
       setAuthError("Account created successfully!");

@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPaperclip, faImage, faVideo, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { Composer, GiftedChat, Bubble, MessageText, InputToolbar, Send, Day } from 'react-native-gifted-chat';
 import { LinearGradient } from 'expo-linear-gradient';
-// import { getPushTokenForUser, sendPushNotification } from './Notifications';
+import { getPushTokenForUser, sendPushNotification } from './Notifications';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -221,23 +221,18 @@ const ChatScreen = () => {
     }
 
     try {
-      // const recipientUid = user.uid;
-      // const expoPushToken = await getPushTokenForUser(recipientUid);
+      const recipientPushToken = await getPushTokenForUser(user.uid);
 
-      // if (expoPushToken) {
-      //   const message = {
-      //     title: 'New message',
-      //     body: `${sender._id === auth.currentUser.uid ? username : user.username} sent you a message.`,
-      //     data: {
-      //       screen: 'ChatScreen',
-      //       params: {
-      //         user: sender._id === auth.currentUser.uid ? user : sender,
-      //         profilePicture: sender._id === auth.currentUser.uid ? user.profilePicture : profilePicture,
-      //       },
-      //     },
-      //   };
-      //   await sendPushNotification(expoPushToken, message);
-      // }
+      if (recipientPushToken) {
+        await sendPushNotification(recipientPushToken, {
+          title: 'New message',
+          body: text || 'You have a new message.',
+          data: {
+            sender: auth.currentUser.uid,
+            recipient: user.uid,
+          },
+        })
+      }
 
       const aesKey = CryptoJS.lib.WordArray.random(16).toString(); //! Generate random AES key
       console.log('AES key:', aesKey); 
