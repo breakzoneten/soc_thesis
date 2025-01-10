@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPaperclip, faImage, faVideo, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { Composer, GiftedChat, Bubble, MessageText, InputToolbar, Send, Day } from 'react-native-gifted-chat';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getPushTokenForUser, sendPushNotification } from './Notifications';
+// import { getPushTokenForUser, sendPushNotification } from './Notifications';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -221,18 +221,20 @@ const ChatScreen = () => {
     }
 
     try {
-      const recipientPushToken = await getPushTokenForUser(user.uid);
+      // const recipientToken = await getPushTokenForUser(user.uid);
 
-      if (recipientPushToken) {
-        await sendPushNotification(recipientPushToken, {
-          title: 'New message',
-          body: text || 'You have a new message.',
-          data: {
-            sender: auth.currentUser.uid,
-            recipient: user.uid,
-          },
-        })
-      }
+      // if (recipientToken) {
+      //   await sendPushNotification(recipientToken, {
+      //     title: `New message from ${sender._id === auth.currentUser.uid ? username : user.username}`,
+      //     body: message.text || 'You have a new message.',
+      //     data: {
+      //       sender: auth.currentUser.uid,
+      //       recipient: user.uid,
+      //     },
+      //   })
+      // } else {
+      //   console.error('Recipient push token not found');
+      // }
 
       const aesKey = CryptoJS.lib.WordArray.random(16).toString(); //! Generate random AES key
       console.log('AES key:', aesKey); 

@@ -1,8 +1,8 @@
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { app } from '../firebaseConfig';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
-import { app } from '../firebaseConfig';
 
 const firestore = getFirestore(app);
 
@@ -20,44 +20,55 @@ function handleRegistrationError(errorMessage) {
   throw new Error(errorMessage);
 }
 
-// Register for push notifications and save the token to Firestore
+// Register a user for push notifications
 export const registerForPushNotificationsAsync = async (userId) => {
+  console.log('Registering for notifications...');
+  if (!Device.isDevice) {
+    console.warn('Must use a physical device for push notifications.');
+    return null;
+  }
 
-  if (Device.isDevice) {
-    let token;
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  // let finalStatus = existingStatus;
+
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    console.log('Updated notification permissions status:', status);
+    if (status !== 'granted') {
+      handleRegistrationError('Failed to get push token for push notifications!');
       console.warn('Failed to get push token for push notifications!');
       return null;
     }
-
-    const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-    if (!projectId) {
-      handleRegistrationError('Failed to get project ID for push notifications!');
-    }
-
-    try {
-      token = (
-        await Notifications.getExpoPushTokenAsync({
-          projectId,
-        })
-      ).data;
-      console.log(token);
-    } catch (e) {
-      handleRegistrationError(`${e}`);
-      return null;
-    }
-
-  } else {
-    console.warn('Must use a physical device for push notifications.');
   }
-  return token;
-};
+
+  // if (finalStatus !== 'granted') {
+  //   console.warn('Failed to get push token for push notifications!');
+  //   return null;
+  // }
+
+  const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+  console.log('Project ID:', projectId);
+  if (!projectId) {
+    handleRegistrationError('Failed to get project ID for push notifications!');
+  }
+
+  try {
+    const token = (
+      await Notifications.getExpoPushTokenAsync(
+        {
+          projectId,
+        }
+      )
+    ).data;
+    console.log("Token:", token);
+    return token;
+  } catch (e) {
+    handleRegistrationError(`${e}`);
+    console.error(e);
+    throw e;
+    // return null;
+  }
+}
 
 // Retrieve the token for a user from Firestore
 export const getPushTokenForUser = async (userId) => {

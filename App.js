@@ -159,3 +159,5 @@ export default function App() {
 //TODO: - notifications 
       //? messages
       //? video / audio calls
+
+//! TBC - issue in register screen and notifications.js (expo push token)
