@@ -110,9 +110,9 @@ const VideoCallScreen = ({ route, navigation }) => {
     };
   };
 
-  useEffect(() => {
-    initializeSocket();
-  }, []);
+  // useEffect(() => {
+  //   initializeSocket();
+  // }, []);
 
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
@@ -133,8 +133,9 @@ const VideoCallScreen = ({ route, navigation }) => {
 
     pc.onconnectionstatechange = () => {
       console.log('Connection state changed:', pc.connectionState);
-      if (pc.connectionState === 'closed') {
+      if (pc.connectionState === 'closed' || pc.connectionState === 'failed') {
         console.log('Peer connection is closed');
+        endCall();
       }
     };
 
@@ -220,7 +221,17 @@ const VideoCallScreen = ({ route, navigation }) => {
       setIsConnected(false);
     }
     setCallStarted(false);
+    setIsMicOn(true);
+    setIsUsingFrontCamera(true);
+    setIsCameraOn(true);
+    setIcCameraOff(false);
   };
+
+  useEffect(() => {
+    return () => {
+      endCall();
+    }
+  }, []);
 
   const toggleMicrophone = () => {
     if (localStream) {
