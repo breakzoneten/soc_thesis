@@ -91,7 +91,31 @@ const AudioCallScreen = ({ route, navigation }) => {
 
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: [
+        {
+          urls: 'stun:stun.l.google.com:19302'
+        },
+        {
+          urls: "turn:asia.relay.metered.ca:80",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+        {
+          urls: "turn:asia.relay.metered.ca:80?transport=tcp",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+        {
+          urls: "turn:asia.relay.metered.ca:443",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+        {
+          urls: "turns:asia.relay.metered.ca:443?transport=tcp",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+      ],
     });
 
     pc.onicecandidate = (event) => {

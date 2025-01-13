@@ -116,7 +116,54 @@ const VideoCallScreen = ({ route, navigation }) => {
 
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: [
+        //? Google's public STUN server
+        {
+          urls: 'stun:stun.l.google.com:19302'
+        },
+        //? Metered TURN server
+        {
+          urls: "turn:asia.relay.metered.ca:80",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+        {
+          urls: "turn:asia.relay.metered.ca:80?transport=tcp",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+        {
+          urls: "turn:asia.relay.metered.ca:443",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+        {
+          urls: "turns:asia.relay.metered.ca:443?transport=tcp",
+          username: "c1a44fd70f84e2d8ef05b4ac",
+          credential: "XO88wG9Y0hTvj0XD",
+        },
+        //? Express TURN server
+        // {
+        //   urls: "turn:relay1.expressturn.com:3478",
+        //   username: "efTZHTNKL6IGGB989F",
+        //   credential: "m6nSI98eCzbyLtnL",
+        // },
+      ],
+      //? Xirsys TURN & STUN server
+      // iceServers: [{
+      //   urls: ["stun:hk-turn1.xirsys.com"]
+      // }, {
+      //   username: "bGHJYjqlmBUTCMW8ozG0CX53OGOdiBlM2Lp5LCxKQyE-jqN8z53w1Z5Ba1PcVwRRAAAAAGeEc8JodW50ZXJ4eGlp",
+      //   credential: "2d0185fa-d152-11ef-91de-0242ac120004",
+      //   urls: [
+      //     "turn:hk-turn1.xirsys.com:80?transport=udp",
+      //     "turn:hk-turn1.xirsys.com:3478?transport=udp",
+      //     "turn:hk-turn1.xirsys.com:80?transport=tcp",
+      //     "turn:hk-turn1.xirsys.com:3478?transport=tcp",
+      //     "turns:hk-turn1.xirsys.com:443?transport=tcp",
+      //     "turns:hk-turn1.xirsys.com:5349?transport=tcp"
+      //   ]
+      // }]
     });
 
     pc.onicecandidate = (event) => {
