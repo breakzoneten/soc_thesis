@@ -27,7 +27,8 @@ export default {
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "INTERNET"
-      ]
+      ],
+      "googleServicesFile": "./google-services.json" 
     },
     "web": {
       "favicon": "./assets/favicon.png"
