@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from './screens/Notifications';
 import LoadingScreen from './screens/Loading';
 import Landingpage from './screens/Landingpage';
 import LoginScreen from './screens/LoginScreen';
@@ -25,6 +27,23 @@ const Stack = createNativeStackNavigator();
 const uuid = uuidv4();
 
 export default function App() {
+  const navigationRef = useRef();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data.screen === 'GroupChatScreen') {
+        navigationRef.current?.navigate('GroupChatScreen', {
+          groupId: data.groupId,
+          groupName: data.groupName,
+        });
+      } 
+    });
+    return () => subscription.remove();
+  }, []);
+
   let [fontsLoaded, fontError] = useFonts({
     TitilliumWeb_400Regular,
     TitilliumWeb_600SemiBold,
@@ -35,7 +54,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator 
       initialRouteName="Load"
       screenOptions={{

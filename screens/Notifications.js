@@ -98,10 +98,10 @@ export const sendPushNotification = async (expoPushToken, message) => {
 
   const messagePayload = {
     to: expoPushToken,
-    sound: 'default',
+    sound: './assets/notif-sound/notif.wav',
     title: message.title || 'Notification',
     body: message.body || 'You have a new message.',
-    data: message.data || {},
+    data: message.data,
   };
 
   try {
@@ -109,6 +109,7 @@ export const sendPushNotification = async (expoPushToken, message) => {
       method: 'POST',
       headers: {
         Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(messagePayload),
@@ -116,7 +117,9 @@ export const sendPushNotification = async (expoPushToken, message) => {
 
     const result = await response.json();
     console.log('Push notification sent successfully:', result);
+    return result;
   } catch (error) {
     console.error('Error sending push notification:', error);
+    throw error;
   }
 };

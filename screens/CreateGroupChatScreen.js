@@ -11,6 +11,7 @@ import { app } from '../firebaseConfig';
 import { RSA } from 'react-native-rsa-native';
 import CryptoJS from 'react-native-crypto-js';
 import * as ImagePicker from 'expo-image-picker';
+import { getPushTokenForUser } from './Notifications';
 
 const Item = ({ user, onPress, isSelected }) => (
   <Pressable
@@ -103,12 +104,18 @@ const CreateGroupScreen = ({ navigation }) => {
     try {
       const aesKey = CryptoJS.lib.WordArray.random(16).toString();
       const encryptedKeys = {};
+      const pushTokens = {};
 
       for (const userId of selectedUsers) {
         const userDoc = await getDoc(doc(firestore, "users", userId));
         const publicKey = userDoc.data().publicKey;
         const encryptedAesKey = await RSA.encrypt(aesKey, publicKey);
         encryptedKeys[userId] = encryptedAesKey;
+
+        const pushToken = await getPushTokenForUser(userId);
+        if (pushToken) {
+          pushTokens[userId] = pushToken;
+        }
       }
 
       const groupDocRef = await addDoc(collection(firestore, 'groups'), {
@@ -117,6 +124,7 @@ const CreateGroupScreen = ({ navigation }) => {
         createdAt: new Date(),
         photoURL: photoURL,
         encryptedKeys: encryptedKeys,
+        pushToken: pushTokens,
       });
       
       navigation.navigate('GroupChats', { groupId: groupDocRef.id, groupName, photoURL }); // Navigate to the chat screen or group chat list

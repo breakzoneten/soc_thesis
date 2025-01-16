@@ -12,6 +12,7 @@ import { Avatar, Divider } from 'react-native-elements';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from '@react-navigation/native';
 import { RSA } from 'react-native-rsa-native';
+import { getPushTokenForUser, sendPushNotification } from './Notifications';
 import * as SecureStore from 'expo-secure-store';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -94,6 +95,7 @@ const GroupChatScreen = ({ route, navigation }) => {
       const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
       const groupDoc = await getDoc(doc(firestore, 'groups', groupId));
+
       const encryptedAesKey = groupDoc.data().encryptedKeys[auth.currentUser.uid];
       console.log('Encrypted AES key:', encryptedAesKey);
       const privateKey = await SecureStore.getItemAsync('privateKey');
@@ -146,6 +148,8 @@ const GroupChatScreen = ({ route, navigation }) => {
       const username = userSnap.data().username;
 
       const groupDoc = await getDoc(doc(firestore, 'groups', groupId));
+
+      const groupData = groupDoc.data();
       const encryptedAesKey = groupDoc.data().encryptedKeys[auth.currentUser.uid];
       console.log('Encrypted AES key:', encryptedAesKey);
       const privateKey = await SecureStore.getItemAsync('privateKey');
@@ -176,6 +180,32 @@ const GroupChatScreen = ({ route, navigation }) => {
         fileName: encryptedFileName,
         fileType: messageData.fileType || '',
       });
+
+      const pushTokens = groupData.pushToken;
+      if (pushTokens) {
+        for (const memberId in pushTokens) {
+          const recipientToken = pushTokens[memberId];
+          if (recipientToken) {
+            console.log('Sending push notification to:', memberId + " with token " + recipientToken);
+            const response = await sendPushNotification(recipientToken, {
+              title: `New messages in ${groupName}`,
+              body: messageText || `Sent an attachment in ${groupName}`,
+              data: { 
+                screen: 'GroupChatScreen', 
+                sender: auth.currentUser.uid, 
+                groupId: groupId, 
+                groupName: groupName,
+              },
+            });
+            console.log('Push notification sent:', response);
+          } else {
+            console.log('No push token found for:', memberId);
+          }
+        }
+      } else {
+        console.log('No push tokens found');
+      }
+
       setMessageText('');
       console.log('Message sent');
     } catch (error) {

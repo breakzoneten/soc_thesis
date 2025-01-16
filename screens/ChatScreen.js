@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPaperclip, faImage, faVideo, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { Composer, GiftedChat, Bubble, MessageText, InputToolbar, Send, Day } from 'react-native-gifted-chat';
 import { LinearGradient } from 'expo-linear-gradient';
-// import { getPushTokenForUser, sendPushNotification } from './Notifications';
+import { getPushTokenForUser, sendPushNotification } from './Notifications';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -143,11 +143,11 @@ const ChatScreen = () => {
             // try {
             if (data.user._id !== auth.currentUser.uid) {
               const decryptedAesKeyBase64 = await RSA.decrypt(data.aesKey, privateKey); //! Decrypt AES key
-              console.log('Decrypted AES key:', decryptedAesKeyBase64); 
+              console.log('Decrypted AES key:', decryptedAesKeyBase64);
               const decryptedAesKey = Buffer.from(decryptedAesKeyBase64, 'base64').toString('hex'); //!  Convert decrypted AES key to buffer 
-              console.log('Decrypted AES key buffer:', decryptedAesKey); 
+              console.log('Decrypted AES key buffer:', decryptedAesKey);
               const decryptedTextBytes = CryptoJS.AES.decrypt(data.text, decryptedAesKey); //! Decrypt text using decrypted AES key
-              console.log('Decrypted text bytes:', decryptedTextBytes); 
+              console.log('Decrypted text bytes:', decryptedTextBytes);
               decryptedText = decryptedTextBytes.toString(CryptoJS.enc.Utf8); //! Convert decrypted text to string
               console.log('Decrypted text:', decryptedText);
               console.log('Decryption successful');
@@ -221,28 +221,34 @@ const ChatScreen = () => {
     }
 
     try {
-      // const recipientToken = await getPushTokenForUser(user.uid);
+      const recipientToken = await getPushTokenForUser(user.uid);
 
-      // if (recipientToken) {
-      //   await sendPushNotification(recipientToken, {
-      //     title: `New message from ${sender._id === auth.currentUser.uid ? username : user.username}`,
-      //     body: message.text || 'You have a new message.',
-      //     data: {
-      //       sender: auth.currentUser.uid,
-      //       recipient: user.uid,
-      //     },
-      //   })
-      // } else {
-      //   console.error('Recipient push token not found');
-      // }
+      if (recipientToken) {
+        // const notificationTitle = sender._id === user.uid ? `New message from ${username}` : `New message from ${user.username}`;
+        await sendPushNotification(recipientToken, {
+          // title: notificationTitle,
+          title: "New message sent to you.",
+          body: message.text || `Attachment sent to you.`,
+          data: {
+            screen: 'ChatScreen',
+            userId: auth.currentUser.uid,
+            userName: username,
+            profilePicture: profilePicture || './assets/profilepic.jpg',
+            recipieintId: user.uid,
+            recipientUserName: user.username,
+          },
+        })
+      } else {
+        console.error('Recipient push token not found');
+      }
 
       const aesKey = CryptoJS.lib.WordArray.random(16).toString(); //! Generate random AES key
-      console.log('AES key:', aesKey); 
+      console.log('AES key:', aesKey);
 
       let encryptedText = '';
       if (text) {
         encryptedText = CryptoJS.AES.encrypt(text, aesKey).toString(); //! Encrypt text using AES key
-        console.log('Encrypted text:', encryptedText); 
+        console.log('Encrypted text:', encryptedText);
       }
 
       const aeseKeyBuffer = Buffer.from(aesKey, 'hex'); //! Convert AES key to buffer
@@ -363,7 +369,7 @@ const ChatScreen = () => {
         const fileName = result.assets[0].name;
         setSelectedFileName(fileName);
         console.log('Document picked:', fileUri);
-        console.log('Document name:', fileName);  
+        console.log('Document name:', fileName);
 
         try {
 
@@ -671,7 +677,7 @@ const ChatScreen = () => {
           name: username,
           avatar: profilePicture || './assets/profilepic.jpg',
         }}
-        renderBubble={props => <CustomBubble { ...props }/>}
+        renderBubble={props => <CustomBubble {...props} />}
         isTyping={isTyping}
         onInputTextChanged={handleInputTextChanged}
         renderMessageText={CustomMessageText}

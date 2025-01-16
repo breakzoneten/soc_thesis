@@ -37,10 +37,10 @@ export default {
       "@config-plugins/react-native-webrtc",
       [
         "expo-notifications", {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/socdark.jpg",
           "color": "#ffffff",
           "defaultChannel": "default",
-          "sound": [
+          "sounds": [
             "./assets/notif-sound/notif.wav",
           ]
         }       

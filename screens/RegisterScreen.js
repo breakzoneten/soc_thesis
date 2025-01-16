@@ -11,7 +11,7 @@ import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // importing registerForPushNotificationsAsync function from Notifications.js
-// import { registerForPushNotificationsAsync } from './Notifications';
+import { registerForPushNotificationsAsync } from './Notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import RSA from 'react-native-rsa-native';
@@ -148,7 +148,7 @@ const RegisterScreen = () => {
         imageUrl = await getDownloadURL(storageRef);
       }
 
-      // const token = await registerForPushNotificationsAsync(user.uid);
+      const token = await registerForPushNotificationsAsync(user.uid);
       const publicKey = await generateKeyPair();
 
       const userDoc = doc(firestore, "users", user.uid);
@@ -158,7 +158,7 @@ const RegisterScreen = () => {
         email: email,
         profilePicture: imageUrl,
         publicKey: publicKey,
-        // expoPushToken: token,
+        expoPushToken: token,
       });
 
       setAuthError("Account created successfully!");
