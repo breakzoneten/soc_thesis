@@ -34,7 +34,11 @@ export default function App() {
 
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
-      if (data.screen === 'GroupChatScreen') {
+      if (data.type === "videocall") {
+        navigationRef.current?.navigate('VideoCall', { callerInfo: data.callerInfo });
+      } else if (data.type === "audiocall") {
+        navigationRef.current?.navigate('AudioCall', { callerInfo: data.callerInfo });
+      } else if (data.screen === 'GroupChatScreen') {
         navigationRef.current?.navigate('GroupChatScreen', {
           groupId: data.groupId,
           groupName: data.groupName,

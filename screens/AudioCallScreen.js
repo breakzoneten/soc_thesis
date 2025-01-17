@@ -1,18 +1,29 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Image, Text, Button, StyleSheet, Pressable } from 'react-native';
 import { mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
 import io from 'socket.io-client';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPhoneSlash, faPhone } from '@fortawesome/free-solid-svg-icons';
+import { sendAudioCallNotification, getPushTokenForUser } from './Notifications';
+import { useFocusEffect } from '@react-navigation/native';
 
 const AudioCallScreen = ({ route, navigation }) => {
-  const { user, username, profilePicture } = route.params;
+  const { user, username, profilePicture, callerInfo } = route.params;
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [callStarted, setCallStarted] = useState(false);
   const socketRef = useRef(null);
   const pcRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (callerInfo) {
+        initializeSocket();
+      }
+    }, [callerInfo])
+  );
+
 
   useEffect(() => {
     return () => {
@@ -156,6 +167,11 @@ const AudioCallScreen = ({ route, navigation }) => {
         pcRef.current.addTrack(track, stream);
       });
       setCallStarted(true);
+
+      const recipientPushToken = await getPushTokenForUser(user.uid);
+      if (recipientPushToken) {
+        await sendAudioCallNotification(recipientPushToken, { user, username, profilePicture });
+      }
     } catch (error) {
       console.error('Error starting local stream:', error);
     }

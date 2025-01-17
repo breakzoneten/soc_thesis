@@ -123,3 +123,77 @@ export const sendPushNotification = async (expoPushToken, message) => {
     throw error;
   }
 };
+
+export const sendVideoCallNotification = async (expoPushToken, callerInfo) => {
+  if (!expoPushToken) {
+    console.warn('Expo push token is required to send notifications.');
+    return;
+  }
+
+  const messagePayload = {
+    to: expoPushToken,
+    sound: './assets/notif-sound/notif.wav',
+    title: 'Incoming Video Call',
+    body: `You have an incoming video call.`,
+    data: {
+      type: 'videocall',
+      callerInfo,
+    },
+  };
+
+  try {
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messagePayload),
+    });
+
+    const result = await response.json();
+    console.log('Push notification sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+    throw error;
+  }
+}
+
+export const sendAudioCallNotification = async (expoPushToken, callerInfo) => {
+  if (!expoPushToken) {
+    console.warn('Expo push token is required to send notifications.');
+    return;
+  }
+
+  const messagePayload = {
+    to: expoPushToken,
+    sound: './assets/notif-sound/notif.wav',
+    title: 'Incoming Audio Call',
+    body: `You have an incoming audio call.`,
+    data: {
+      type: 'audiocall',
+      callerInfo,
+    },
+  };
+
+  try {
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messagePayload),
+    });
+
+    const result = await response.json();
+    console.log('Push notification sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+    throw error;
+  }
+}

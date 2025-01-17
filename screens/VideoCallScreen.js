@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Image, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
 import io from 'socket.io-client';
@@ -6,9 +6,11 @@ import { app } from '../firebaseConfig';
 import { getFirestore, addDoc, collection } from 'firebase/firestore';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPhoneSlash, faPhone, faSync, faMicrophone, faMicrophoneSlash, faVideo, faVideoSlash } from '@fortawesome/free-solid-svg-icons';
+import { sendVideoCallNotification, getPushTokenForUser } from './Notifications';
+import { useFocusEffect } from '@react-navigation/native';
 
 const VideoCallScreen = ({ route, navigation }) => {
-  const { user, profilePicture } = route.params;
+  const { user, profilePicture, callerInfo } = route.params;
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -20,6 +22,14 @@ const VideoCallScreen = ({ route, navigation }) => {
   const socketRef = useRef(null);
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (callerInfo) {
+        initializeSocket();
+      }
+    }, [callerInfo])
+  );
 
   const AnimatedPressable = ({ onPress, style, children }) => {
     const animatedScale = useRef(new Animated.Value(1)).current;
@@ -210,6 +220,11 @@ const VideoCallScreen = ({ route, navigation }) => {
       });
       setCallStarted(true);
       await saveCallDetails();
+
+      const recipientPushToken = await getPushTokenForUser(user.uid);
+      if (recipientPushToken) {
+        await sendVideoCallNotification(recipientPushToken, user);
+      }
     } catch (error) {
       console.error('Error starting local stream:', error);
     }
