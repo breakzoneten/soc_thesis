@@ -134,7 +134,7 @@ export const sendVideoCallNotification = async (expoPushToken, callerInfo) => {
     to: expoPushToken,
     sound: './assets/notif-sound/notif.wav',
     title: 'Incoming Video Call',
-    body: `You have an incoming video call.`,
+    body: `You have an incoming video call from ${callerInfo.name || "Unknown Caller"}.`, // modified line
     data: {
       type: 'videocall',
       callerInfo,

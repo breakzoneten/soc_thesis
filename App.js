@@ -180,7 +180,7 @@ export default function App() {
 
 //TODO
 //TODO: - notifications 
-      //? messages
-      //? video / audio calls
+      //? name in VC/AC Notifications
+      //? caller pic in the video call screen once the notification is clicked
 
 //! TBC - issue in register screen and notifications.js (expo push token)

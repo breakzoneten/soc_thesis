@@ -10,7 +10,7 @@ import { sendVideoCallNotification, getPushTokenForUser } from './Notifications'
 import { useFocusEffect } from '@react-navigation/native';
 
 const VideoCallScreen = ({ route, navigation }) => {
-  const { user, profilePicture, callerInfo } = route.params;
+  const { caller, recipient, profilePicture } = route.params; // newly added line
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -23,12 +23,14 @@ const VideoCallScreen = ({ route, navigation }) => {
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
 
+  console.log(route.params); // newly added line
+
   useFocusEffect(
     useCallback(() => {
-      if (callerInfo) {
+      if (caller) { // modified line
         initializeSocket();
       }
-    }, [callerInfo])
+    }, [caller]) // modified line
   );
 
   const AnimatedPressable = ({ onPress, style, children }) => {
@@ -119,10 +121,6 @@ const VideoCallScreen = ({ route, navigation }) => {
       }
     };
   };
-
-  // useEffect(() => {
-  //   initializeSocket();
-  // }, []);
 
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
@@ -221,9 +219,18 @@ const VideoCallScreen = ({ route, navigation }) => {
       setCallStarted(true);
       await saveCallDetails();
 
-      const recipientPushToken = await getPushTokenForUser(user.uid);
+      // newly added code
+      const recipientPushToken = await getPushTokenForUser(recipient.uid);
       if (recipientPushToken) {
-        await sendVideoCallNotification(recipientPushToken, user);
+        const callerInfo = {
+          name: caller.username || 'Unknown Caller',
+          profilePicture: caller.profilePicture || null,
+          uid: caller.uid,
+        }
+
+        console.log("Caller Info: ", callerInfo);
+        await sendVideoCallNotification(recipientPushToken, callerInfo);
+        // until here
       }
     } catch (error) {
       console.error('Error starting local stream:', error);
