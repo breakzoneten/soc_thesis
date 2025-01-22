@@ -40,23 +40,9 @@ const ChatScreen = () => {
   const { user, profilePicture, username } = route.params;
   const participantIds = [auth.currentUser.uid, user.uid].sort().join('_');
 
-  // newly added code 
   const VideoC = () => {
-    const caller = {
-      username: auth.currentUser.displayName || 'Unknown Caller', 
-      uid: auth.currentUser.uid, 
-      profilePicture: auth.currentUser.photoURL || './assets/defaultAvatar.jpg', 
-    };
-  
-    console.log("Caller Info in ChatScreen:", caller); 
-  
-    navigation.navigate('VideoCall', { 
-      caller, 
-      recipient: user, 
-      profilePicture 
-    });
+    navigation.navigate('VideoCall', { user, profilePicture });
   };
-  // until here
 
   const AudioC = () => {
     navigation.navigate('AudioCall', { user, profilePicture });

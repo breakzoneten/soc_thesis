@@ -4,8 +4,10 @@ import { mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-na
 import io from 'socket.io-client';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPhoneSlash, faPhone } from '@fortawesome/free-solid-svg-icons';
-import { sendAudioCallNotification, getPushTokenForUser } from './Notifications';
+import { sendAudioCallNotification, getPushTokenForUser, getUserDetailsForNotification } from './Notifications';
 import { useFocusEffect } from '@react-navigation/native';
+import { app } from '../firebaseConfig';
+import { getAuth } from 'firebase/auth';
 
 const AudioCallScreen = ({ route, navigation }) => {
   const { user, username, profilePicture, callerInfo } = route.params;
@@ -15,6 +17,7 @@ const AudioCallScreen = ({ route, navigation }) => {
   const [callStarted, setCallStarted] = useState(false);
   const socketRef = useRef(null);
   const pcRef = useRef(null);
+  const auth = getAuth(app);  
 
   useFocusEffect(
     useCallback(() => {
@@ -168,9 +171,11 @@ const AudioCallScreen = ({ route, navigation }) => {
       });
       setCallStarted(true);
 
-      const recipientPushToken = await getPushTokenForUser(user.uid);
-      if (recipientPushToken) {
-        await sendAudioCallNotification(recipientPushToken, { user, username, profilePicture });
+      const callerInfo = await getUserDetailsForNotification(auth.currentUser.uid);
+      const recipientDetails = await getUserDetailsForNotification(user.uid);
+      if (recipientDetails && recipientDetails.expoPushToken && callerInfo) {
+        console.log('Sending video call notification to:', user.username);
+        await sendAudioCallNotification(recipientDetails.expoPushToken, callerInfo);
       }
     } catch (error) {
       console.error('Error starting local stream:', error);

@@ -89,6 +89,30 @@ export const getPushTokenForUser = async (userId) => {
   }
 };
 
+export const getUserDetailsForNotification = async (userId) => {
+  if (!userId) {
+      console.warn('User ID is required to fetch user details.');
+      return null;
+  }
+
+  const userDoc = doc(firestore, 'users', userId);
+  const docSnapshot = await getDoc(userDoc);
+
+  if (docSnapshot.exists()) {
+      const data = docSnapshot.data();
+      return {
+          expoPushToken: data.expoPushToken || null,
+          username: data.username || 'Unknown User',
+          profilePicture: data.profilePicture || './assets/defaultProfile.png',
+          userId, // Include userId as part of the result
+      };
+  } else {
+      console.warn('No document found for the specified user ID.');
+      return null;
+  }
+};
+
+
 // Send a push notification
 export const sendPushNotification = async (expoPushToken, message) => {
   if (!expoPushToken) {
@@ -134,7 +158,7 @@ export const sendVideoCallNotification = async (expoPushToken, callerInfo) => {
     to: expoPushToken,
     sound: './assets/notif-sound/notif.wav',
     title: 'Incoming Video Call',
-    body: `You have an incoming video call from ${callerInfo.name || "Unknown Caller"}.`, // modified line
+    body: `You have an incoming video call from ${callerInfo.username}.`,
     data: {
       type: 'videocall',
       callerInfo,
@@ -171,7 +195,7 @@ export const sendAudioCallNotification = async (expoPushToken, callerInfo) => {
     to: expoPushToken,
     sound: './assets/notif-sound/notif.wav',
     title: 'Incoming Audio Call',
-    body: `You have an incoming audio call.`,
+    body: `You have an incoming audio call from ${callerInfo.username}.`,
     data: {
       type: 'audiocall',
       callerInfo,

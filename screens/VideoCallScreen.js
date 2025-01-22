@@ -3,14 +3,15 @@ import { View, Image, Text, StyleSheet, Pressable, Animated } from 'react-native
 import { RTCView, mediaDevices, RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
 import io from 'socket.io-client';
 import { app } from '../firebaseConfig';
-import { getFirestore, addDoc, collection } from 'firebase/firestore';
+import { getFirestore, addDoc, collection, getDoc, doc } from 'firebase/firestore';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPhoneSlash, faPhone, faSync, faMicrophone, faMicrophoneSlash, faVideo, faVideoSlash } from '@fortawesome/free-solid-svg-icons';
-import { sendVideoCallNotification, getPushTokenForUser } from './Notifications';
+import { sendVideoCallNotification, getPushTokenForUser, getUserDetailsForNotification } from './Notifications';
 import { useFocusEffect } from '@react-navigation/native';
+import { getAuth } from 'firebase/auth';
 
 const VideoCallScreen = ({ route, navigation }) => {
-  const { caller, recipient, profilePicture } = route.params; // newly added line
+  const { user, profilePicture, callerInfo } = route.params;
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -19,19 +20,48 @@ const VideoCallScreen = ({ route, navigation }) => {
   const [isUsingFrontCamera, setIsUsingFrontCamera] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isCameraOff, setIcCameraOff] = useState(false);
+  const [callerProfilePicture, setCallerProfilePicture] = useState(profilePicture || null);
   const socketRef = useRef(null);
   const pcRef = useRef(null);
   const firestore = getFirestore(app);
+  const auth = getAuth(app);
 
-  console.log(route.params); // newly added line
-
+  console.log("Route Params: ", route.params);
   useFocusEffect(
     useCallback(() => {
-      if (caller) { // modified line
+      if (callerInfo) {
         initializeSocket();
       }
-    }, [caller]) // modified line
+    }, [callerInfo])
   );
+
+  useEffect(() => {
+    const initializeProfilePicture = async () => {
+      if (!callerProfilePicture) {
+        const profilePictureUrl = await fetchUserProfilePicture(callerInfo.uid);
+        setCallerProfilePicture(profilePictureUrl);
+      }
+    };
+
+    initializeProfilePicture();
+  }, [callerProfilePicture, user]);
+
+  const fetchUserProfilePicture = async (userId) => {
+    try {
+        const firestore = getFirestore(app);
+        const userDoc = await getDoc(doc(firestore, 'users', userId));
+
+        if (userDoc.exists()) {
+            return userDoc.data().profilePicture || '../assets/profilepic.jpg';
+        } else {
+            console.warn('User not found in Firestore.');
+            return '../assets/profilepic.jpg'; // Default profile picture
+        }
+    } catch (error) {
+        console.error('Error fetching user profile picture:', error);
+        return '../assets/profilepic.jpg'; // Default profile picture
+    }
+};
 
   const AnimatedPressable = ({ onPress, style, children }) => {
     const animatedScale = useRef(new Animated.Value(1)).current;
@@ -121,6 +151,10 @@ const VideoCallScreen = ({ route, navigation }) => {
       }
     };
   };
+
+  // useEffect(() => {
+  //   initializeSocket();
+  // }, []);
 
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
@@ -219,18 +253,11 @@ const VideoCallScreen = ({ route, navigation }) => {
       setCallStarted(true);
       await saveCallDetails();
 
-      // newly added code
-      const recipientPushToken = await getPushTokenForUser(recipient.uid);
-      if (recipientPushToken) {
-        const callerInfo = {
-          name: caller.username || 'Unknown Caller',
-          profilePicture: caller.profilePicture || null,
-          uid: caller.uid,
-        }
-
-        console.log("Caller Info: ", callerInfo);
-        await sendVideoCallNotification(recipientPushToken, callerInfo);
-        // until here
+      const callerInfo = await getUserDetailsForNotification(auth.currentUser.uid);
+      const recipientDetails = await getUserDetailsForNotification(user.uid);
+      if (recipientDetails && recipientDetails.expoPushToken && callerInfo) {
+        console.log('Sending video call notification to:', user.username);
+        await sendVideoCallNotification(recipientDetails.expoPushToken, callerInfo);
       }
     } catch (error) {
       console.error('Error starting local stream:', error);
@@ -402,7 +429,7 @@ const VideoCallScreen = ({ route, navigation }) => {
             }}
           >
             <Image
-              source={{ uri: profilePicture }}
+              source={callerProfilePicture ? { uri: callerProfilePicture } : require('../assets/profilepic.jpg')}
               style={{
                 width: 150,
                 height: 150,
