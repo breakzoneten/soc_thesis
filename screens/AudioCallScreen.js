@@ -24,7 +24,10 @@ const AudioCallScreen = ({ route, navigation }) => {
       if (callerInfo) {
         initializeSocket();
       }
-    }, [callerInfo])
+      if (route.params.autoStart) {
+        startLocalStream();
+      }
+    }, [callerInfo, route.params.autoStart])
   );
 
 

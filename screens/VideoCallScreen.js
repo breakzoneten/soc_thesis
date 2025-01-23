@@ -32,7 +32,10 @@ const VideoCallScreen = ({ route, navigation }) => {
       if (callerInfo) {
         initializeSocket();
       }
-    }, [callerInfo])
+      if (route.params.autoStart) {
+        startLocalStream();
+      }
+    }, [callerInfo, route.params.autoStart])
   );
 
   useEffect(() => {
@@ -52,14 +55,14 @@ const VideoCallScreen = ({ route, navigation }) => {
         const userDoc = await getDoc(doc(firestore, 'users', userId));
 
         if (userDoc.exists()) {
-            return userDoc.data().profilePicture || '../assets/profilepic.jpg';
+            return userDoc.data().profilePicture || './assets/profilepic.jpg';
         } else {
             console.warn('User not found in Firestore.');
-            return '../assets/profilepic.jpg'; // Default profile picture
+            return './assets/profilepic.jpg'; // Default profile picture
         }
     } catch (error) {
         console.error('Error fetching user profile picture:', error);
-        return '../assets/profilepic.jpg'; // Default profile picture
+        return './assets/profilepic.jpg'; // Default profile picture
     }
 };
 
