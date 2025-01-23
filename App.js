@@ -37,7 +37,7 @@ export default function App() {
       if (data.type === "videocall") {
         navigationRef.current?.navigate('VideoCall', { callerInfo: data.callerInfo, autoStart: true});
       } else if (data.type === "audiocall") {
-        navigationRef.current?.navigate('AudioCall', { callerInfo: data.callerInfo });
+        navigationRef.current?.navigate('AudioCall', { callerInfo: data.callerInfo, autoStart: true }); // autoStart: true
       } else if (data.screen === 'GroupChatScreen') {
         navigationRef.current?.navigate('GroupChatScreen', {
           groupId: data.groupId,
